@@ -57,6 +57,12 @@ typings/
 # dotenv environment variables file
 .env
 
+# macOS system files
+.DS_Store
+
+# VS Code settings
+.vscode/
+
 .cache/
 public
 yarn-error.log
