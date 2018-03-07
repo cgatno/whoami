@@ -18,10 +18,13 @@
     "gatsby-plugin-canonical-urls": "^1.0.14",
     "gatsby-plugin-emotion": "^1.1.15",
     "gatsby-plugin-netlify": "^1.0.19",
+    "gatsby-plugin-react-helmet": "^2.0.6",
     "gatsby-plugin-typography": "^1.7.17",
-    "react-emotion": "^9.0.2"
+    "react-emotion": "^9.0.2",
+    "react-helmet": "^5.2.0"
   },
   "peerDependencies": {
+    "prop-types": "^15.6.1",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "typography": "^0.16.6"

@@ -12,6 +12,8 @@ module.exports = {
         siteUrl: `https://christiangaetano.com`,
       },
     },
+    `gatsby-plugin-emotion`,
+    `gatsby-plugin-react-helmet`,
     `gatsby-plugin-netlify`,
   ],
 }
