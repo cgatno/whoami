@@ -12,5 +12,6 @@ module.exports = {
         siteUrl: `https://christiangaetano.com`,
       },
     },
+    `gatsby-plugin-netlify`,
   ],
 }
