@@ -10,5 +10,8 @@
   "dependencies": {
     "gatsby": "^1.9.223",
     "gatsby-link": "^1.6.38"
+  },
+  "devDependencies": {
+    "prettier": "^1.11.1"
   }
 }
