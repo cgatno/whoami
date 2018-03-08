@@ -91,6 +91,8 @@ const MenuLink = styled(Link)`
   }
 `
 
+const MenuA = MenuLink.withComponent("a")
+
 const Menu = ({ children }) => (
   <Wrapper>
     <Brand>
@@ -117,6 +119,11 @@ const Menu = ({ children }) => (
         </MenuItem>
         <MenuItem>
           <MenuLink to="/">Resume</MenuLink>
+        </MenuItem>
+        <MenuItem>
+          <MenuA href="https://github.com/cgatno" target="_cgatno_github">
+            Code
+          </MenuA>
         </MenuItem>
       </MenuList>
       {children}
