@@ -33,7 +33,10 @@ class Template extends React.Component {
   render() {
     return (
       <PageWrapper>
-        <Helmet bodyAttributes={{ class: HotBod }} />
+        <Helmet
+          bodyAttributes={{ class: HotBod }}
+          htmlAttributes={{ lang: "en-US" }}
+        />
         <Menu />
         <div>{this.props.children()}</div>
       </PageWrapper>
