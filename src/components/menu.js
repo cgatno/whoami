@@ -2,6 +2,7 @@ import * as React from "react"
 import PropTypes from "prop-types"
 import styled from "react-emotion"
 import gray from "gray-percentage"
+import Link from "gatsby-link"
 
 import colors from "../utils/colors"
 import { rhythm, adjustFontSizeTo } from "../utils/typography"
@@ -27,10 +28,11 @@ const Wrapper = styled("header")`
 const Brand = styled("div")`
   display: flex;
   flex-direction: row;
+  flex-grow: 1;
   align-items: center;
 
   /* Bump down menu before things get too cramped */
-  margin-right: 40px;
+  margin-bottom: ${rhythm(1 / 2)};
 
   h1 {
     color: ${colors.primaryColorLight};
@@ -41,16 +43,7 @@ const Brand = styled("div")`
   h2 {
     margin: 0 0 0 ${3 / 18}em;
     color: ${gray(54)};
-    ${adjustFontSizeTo(`${18 * (3 / 4)}px`)};
-  }
-
-  @media screen and (max-width: 653px) {
-    margin-bottom: ${rhythm(1)};
-    margin-right: 0;
-  }
-
-  @media screen and (max-width: 480px) {
-    text-align: center;
+    ${adjustFontSizeTo(`${18 * (4 / 5)}px`)};
   }
 `
 
@@ -59,16 +52,8 @@ const Logo = styled("img")`
   height: 65px;
   margin: 0 15px 0 0;
 
-  @media screen and (max-width: 480px) {
+  @media screen and (max-width: 440px) {
     display: none;
-  }
-`
-
-// <nav> element for wrapping the menu
-const MenuWrapper = styled("nav")`
-  margin-left: auto;
-  @media screen and (max-width: 660px) {
-    margin: 0;
   }
 `
 
@@ -96,6 +81,16 @@ const MenuItem = styled("li")`
   }
 `
 
+const MenuLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+  transition: 0.2s ease-in-out;
+
+  &:hover {
+    color: ${colors.primaryColorLight};
+  }
+`
+
 const Menu = ({ children }) => (
   <Wrapper>
     <Brand>
@@ -106,23 +101,35 @@ const Menu = ({ children }) => (
       </picture>
       <div>
         <h1>Christian Gaetano</h1>
-        <h2>Software Engineer & Dabbling Designer</h2>
+        <h2>Software Engineer &amp; Dabbling Designer</h2>
       </div>
     </Brand>
-    <MenuWrapper role="navigation">
+    <nav role="navigation">
       <MenuList>
-        <MenuItem>Home</MenuItem>
-        <MenuItem>Work</MenuItem>
-        <MenuItem>Blog</MenuItem>
-        <MenuItem>Resume</MenuItem>
+        <MenuItem>
+          <MenuLink to="/">Home</MenuLink>
+        </MenuItem>
+        <MenuItem>
+          <MenuLink to="/">Work</MenuLink>
+        </MenuItem>
+        <MenuItem>
+          <MenuLink to="/">Blog</MenuLink>
+        </MenuItem>
+        <MenuItem>
+          <MenuLink to="/">Resume</MenuLink>
+        </MenuItem>
       </MenuList>
       {children}
-    </MenuWrapper>
+    </nav>
   </Wrapper>
 )
 
 Menu.propTypes = {
-  children: PropTypes.arrayOf(PropTypes.element).isRequired,
+  children: PropTypes.arrayOf(PropTypes.element),
+}
+
+Menu.defaultProps = {
+  children: [],
 }
 
 export default Menu

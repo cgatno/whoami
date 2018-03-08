@@ -16,7 +16,7 @@ const typography = new Typography({
     },
     {
       name: "Lato",
-      styles: ["400", "900"],
+      styles: ["400", "700"],
     },
   ],
 })
