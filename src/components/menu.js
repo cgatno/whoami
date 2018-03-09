@@ -5,7 +5,9 @@ import gray from "gray-percentage"
 import Link from "gatsby-link"
 
 import colors from "../utils/colors"
+/* eslint-disable import/named */
 import { rhythm, adjustFontSizeTo } from "../utils/typography"
+/* eslint-enable import/named */
 
 // Primary mark
 import LogoPNG from "../images/primary-logo.png"
@@ -22,6 +24,7 @@ const Wrapper = styled("header")`
   margin-bottom: ${rhythm(2)};
   padding-bottom: ${rhythm(1 / 2)};
   border-bottom: 1px solid ${gray(80)};
+  position: relative;
 `
 
 // Contains logo, name, subtitle

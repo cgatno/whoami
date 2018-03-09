@@ -3,13 +3,18 @@ import Helmet from "react-helmet"
 import styled from "react-emotion"
 import gray from "gray-percentage"
 
+/* eslint-disable import/named */
 import { rhythm, adjustFontSizeTo } from "../utils/typography"
+/* eslint-enable import/named */
+import colors from "../utils/colors"
 
+// Extra large header with name
 const Name = styled("h1")`
   ${adjustFontSizeTo(`${18 * 3}px`)};
   font-weight: 700;
 `
 
+// Specialized horizontal list with contact info
 const HorizontalList = styled("ul")`
   list-style: none;
   margin: 0;
@@ -28,11 +33,30 @@ const HorizontalList = styled("ul")`
       padding-right: 0;
       border-right: 0;
     }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+
+      &:hover {
+        color: ${colors.primaryColorLight};
+      }
+    }
   }
 `
 
+// Resume page is special so it gets its own wrapper
+const Wrapper = styled("div")`
+  max-width: 720px;
+`
+
+// Content sections and specific styling
 const Section = styled("section")`
   margin-top: ${rhythm(2)};
+`
+
+const SubSection = styled("section")`
+  margin-top: ${rhythm(1.5)};
 `
 
 const SectionHeader = styled("h3")`
@@ -40,8 +64,15 @@ const SectionHeader = styled("h3")`
   font-weight: 700;
 `
 
+const SubHeader = styled("span")`
+  font-weight: 700;
+  color: ${gray(50)};
+  display: block;
+  margin-bottom: ${rhythm(4 / 18)};
+`
+
 export default () => (
-  <div>
+  <Wrapper>
     <Helmet>
       <title>Christian Gaetano — Resume</title>
       <link rel="canonical" href="https://christiangaetano.com/resume" />
@@ -67,6 +98,83 @@ export default () => (
     </header>
     <Section>
       <SectionHeader>Summary</SectionHeader>
+      <p>
+        Driven and focused (and sometimes whimsical) JavaScript developer
+        combining accredited biochemistry background with years of software
+        development experience to deliver innovative, tested infrastructure
+        solutions and engaging, delightful web experiences. Eager to collaborate
+        with dedicated team members on cutting edge projects that push the
+        boundaries of web technology to deliver novel products.
+      </p>
     </Section>
-  </div>
+    <Section>
+      <SectionHeader>Experience</SectionHeader>
+      <SubSection>
+        <SubHeader>GrapeCity, Inc.</SubHeader>
+        <p>Full Stack Web Developer, Feb 2017 &ndash; Present</p>
+        <ul>
+          <li>
+            Developed an Express.js-based Node.js app to power new production
+            marketing website
+          </li>
+          <li>
+            Devised MongoDB schema for session storage and user authentication,
+            integrated with Express
+          </li>
+          <li>
+            Planned and led implementation of new JavaScript code quality
+            standards via source control strategy, code review, ESLint and Jest
+            unit testing
+          </li>
+          <li>
+            Created server-rendered UI layouts using Handlebars templating
+            engine and SCSS
+          </li>
+          <li>
+            Integrated novel DevOps workflows using Grunt task runner,
+            Metalsmith, and Node.js infrastructure to facilitate quick
+            development, deployment and content updates
+          </li>
+        </ul>
+      </SubSection>
+      <SubSection>
+        <p>Technical Engagement Engineer, Oct 2016 &ndash; Feb 2017</p>
+        <ul>
+          <li>
+            Created product samples for JavaScript UI control product line,
+            Wijmo
+          </li>
+          <li>
+            Inspected, updated and generated documentation and knowledge base
+            articles for all product lines
+          </li>
+          <li>
+            Wrote blog posts summarizing the latest JavaScript development
+            trends
+          </li>
+          <li>
+            Created innovative product demos to showcase product features and
+            companion tutorial blogs
+          </li>
+        </ul>
+      </SubSection>
+    </Section>
+    <Section>
+      <SectionHeader>Education</SectionHeader>
+      <SubSection>
+        <SubHeader>Duquesne University</SubHeader>
+        <p>B.S. Biochemistry, 2012-2016</p>
+        <ul>
+          <li>
+            Hands-on, independent research and iterative project development
+          </li>
+          <li>Summa Cum Laude / Minors in Biology and Mathematics</li>
+          <li>
+            Undergraduate Honors Thesis on fragile X syndrome pathogenesis
+          </li>
+          <li>2016 Bayer School General Excellence Awardee</li>
+        </ul>
+      </SubSection>
+    </Section>
+  </Wrapper>
 )

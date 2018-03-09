@@ -3,12 +3,16 @@ import PropTypes from "prop-types"
 import styled, { css, injectGlobal } from "react-emotion"
 import Helmet from "react-helmet"
 
+/* eslint-disable import/named */
 import { rhythm } from "../utils/typography"
+/* eslint-enable import/named */
 import colors from "../utils/colors"
 
 import Menu from "../components/menu"
+import Footer from "../components/footer"
 
 // Generate global default styling for a tags
+/* eslint-disable no-unused-expressions */
 injectGlobal`
   a {
     color: ${colors.primaryColorLight};
@@ -19,6 +23,7 @@ injectGlobal`
     }
   }
 `
+/* eslint-enable no-unused-expressions */
 
 // Generate a special class we can apply to the document body
 const HotBod = css`
@@ -52,6 +57,8 @@ class Template extends React.Component {
         />
         <Menu location={this.props.location} />
         <div>{this.props.children()}</div>
+
+        <Footer />
       </PageWrapper>
     )
   }
