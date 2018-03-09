@@ -7,12 +7,6 @@ module.exports = {
       },
     },
     {
-      resolve: `gatsby-plugin-canonical-urls`,
-      options: {
-        siteUrl: `https://christiangaetano.com`,
-      },
-    },
-    {
       resolve: `gatsby-plugin-favicon`,
       options: {
         logo: "./src/favicon.png",

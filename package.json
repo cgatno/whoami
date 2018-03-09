@@ -1,8 +1,10 @@
 {
   "name": "whoami",
-  "description": "Follow along through every triumph, existential crisis, tech industry-related rant, and short-lived fitness stint of this journey I call life. ✌️",
+  "description":
+    "Follow along through every triumph, existential crisis, tech industry-related rant, and short-lived fitness stint of this journey I call life. ✌️",
   "version": "1.0.0",
-  "author": "Christian Gaetano <hello@christiangaetano.com> (https://christiangaetano.com)",
+  "author":
+    "Christian Gaetano <hello@christiangaetano.com> (https://christiangaetano.com)",
   "license": "MIT",
   "scripts": {
     "develop": "gatsby develop",
@@ -41,6 +43,7 @@
   },
   "xo": {
     "extends": "xo-react",
-    "prettier": true
+    "prettier": true,
+    "env": ["browser"]
   }
 }

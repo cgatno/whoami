@@ -1,11 +1,24 @@
 import * as React from "react"
 import PropTypes from "prop-types"
-import styled, { css } from "react-emotion"
+import styled, { css, injectGlobal } from "react-emotion"
 import Helmet from "react-helmet"
 
 import { rhythm } from "../utils/typography"
+import colors from "../utils/colors"
 
 import Menu from "../components/menu"
+
+// Generate global default styling for a tags
+injectGlobal`
+  a {
+    color: ${colors.primaryColorLight};
+    transition: 0.2s ease-in-out;
+
+    &:hover {
+      color: ${colors.primaryColor};
+    }
+  }
+`
 
 // Generate a special class we can apply to the document body
 const HotBod = css`
@@ -37,7 +50,7 @@ class Template extends React.Component {
           bodyAttributes={{ class: HotBod }}
           htmlAttributes={{ lang: "en-US" }}
         />
-        <Menu />
+        <Menu location={this.props.location} />
         <div>{this.props.children()}</div>
       </PageWrapper>
     )
@@ -46,6 +59,7 @@ class Template extends React.Component {
 
 Template.propTypes = {
   children: PropTypes.func.isRequired,
+  location: PropTypes.object.isRequired,
 }
 
 export default Template

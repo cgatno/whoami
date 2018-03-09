@@ -19,7 +19,7 @@ const Wrapper = styled("header")`
   align-items: center;
   justify-content: center;
   width: 100%;
-  margin-bottom: ${rhythm(1)};
+  margin-bottom: ${rhythm(2)};
   padding-bottom: ${rhythm(1 / 2)};
   border-bottom: 1px solid ${gray(80)};
 `
@@ -93,18 +93,22 @@ const MenuLink = styled(Link)`
 
 const MenuA = MenuLink.withComponent("a")
 
-const Menu = ({ children }) => (
+const Menu = ({ children, location }) => (
   <Wrapper>
     <Brand>
-      <picture>
-        <source srcSet={LogoWEBP} type="image/webp" />
-        <source srcSet={LogoPNG} type="image/png" />
-        <Logo src={LogoPNG} />
-      </picture>
-      <div>
-        <h1>Christian Gaetano</h1>
-        <h2>Software Engineer &amp; Dabbling Designer</h2>
-      </div>
+      <Link to="/">
+        <picture>
+          <source srcSet={LogoWEBP} type="image/webp" />
+          <source srcSet={LogoPNG} type="image/png" />
+          <Logo src={LogoPNG} />
+        </picture>
+      </Link>
+      {location.pathname !== "/resume" && (
+        <div>
+          <h1>Christian Gaetano</h1>
+          <h2>Software Engineer &amp; Dabbling Designer</h2>
+        </div>
+      )}
     </Brand>
     <nav role="navigation">
       <MenuList>
@@ -118,7 +122,7 @@ const Menu = ({ children }) => (
           <MenuLink to="/">Blog</MenuLink>
         </MenuItem>
         <MenuItem>
-          <MenuLink to="/">Resume</MenuLink>
+          <MenuLink to="/resume">Resume</MenuLink>
         </MenuItem>
         <MenuItem>
           <MenuA href="https://github.com/cgatno" target="_cgatno_github">
@@ -133,6 +137,7 @@ const Menu = ({ children }) => (
 
 Menu.propTypes = {
   children: PropTypes.arrayOf(PropTypes.element),
+  location: PropTypes.object.isRequired,
 }
 
 Menu.defaultProps = {
