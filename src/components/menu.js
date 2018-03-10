@@ -87,7 +87,7 @@ const MenuItem = styled("li")`
 const MenuLink = styled(Link)`
   text-decoration: none;
   color: inherit;
-  transition: 0.2s ease-in-out;
+  transition: 0.3s ease-in-out;
 
   &:hover {
     color: ${colors.primaryColorLight};

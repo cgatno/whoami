@@ -16,7 +16,7 @@ import Footer from "../components/footer"
 injectGlobal`
   a {
     color: ${colors.primaryColorLight};
-    transition: 0.2s ease-in-out;
+    transition: 0.3s ease-in-out;
 
     &:hover {
       color: ${colors.primaryColor};
@@ -41,7 +41,7 @@ const PageWrapper = styled("main")`
   margin: 0 auto;
   padding: 2.5rem 0;
 
-  @media screen and (max-width: 980px) {
+  @media screen and (max-width: 990px) {
     padding-left: ${rhythm(2)};
     padding-right: ${rhythm(2)};
   }

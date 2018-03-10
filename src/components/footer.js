@@ -1,10 +1,7 @@
 import * as React from "react"
-import PropTypes from "prop-types"
 import styled from "react-emotion"
 import gray from "gray-percentage"
-import Link from "gatsby-link"
 
-import colors from "../utils/colors"
 /* eslint-disable import/named */
 import { rhythm, adjustFontSizeTo } from "../utils/typography"
 /* eslint-enable import/named */
