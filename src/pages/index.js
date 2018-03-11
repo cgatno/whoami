@@ -13,6 +13,8 @@ export default () => (
         content="Biochemist turned software developer who's downright crazy about building for the web. Right now, I work with full stack JavaScript at GrapeCity, but I also spend lots of time working on open source projects, pretending to be a designer, and writing about life. Climb aboard to see what I'm up to and get in touch!"
       />
     </Helmet>
-    <p>Page</p>
+    <h1 style={{ fontFamily: ["Lora", "serif"].join(", ") }}>
+      <i>Hello,</i>
+    </h1>
   </div>
 )

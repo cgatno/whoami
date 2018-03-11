@@ -118,12 +118,12 @@ const Menu = ({ children, location }) => (
         <MenuItem>
           <MenuLink to="/">Home</MenuLink>
         </MenuItem>
-        <MenuItem>
+        {/* <MenuItem>
           <MenuLink to="/">Work</MenuLink>
         </MenuItem>
         <MenuItem>
           <MenuLink to="/">Blog</MenuLink>
-        </MenuItem>
+        </MenuItem> */}
         <MenuItem>
           <MenuLink to="/resume">Resume</MenuLink>
         </MenuItem>
