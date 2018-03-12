@@ -49,9 +49,9 @@ const SocialLink = styled("a")`
 // Special styling for instagram link - gradient on hover
 const InstaLink = styled("a")`
   /* TODO: consolidate this duplicate CSS */
+  position: relative;
   color: inherit;
   margin-right: 10px;
-  position: relative;
   display: inline-block;
   ${adjustFontSizeTo("16px")};
 
@@ -67,17 +67,12 @@ const InstaLink = styled("a")`
     background: #fcfcfc;
     mix-blend-mode: screen;
     padding: 0 2px;
+    line-height: 1rem;
   }
 
   .bg {
-    width: calc(100% - 2px);
-    height: 20px;
     background: #000;
-    margin-right: -0.5px;
-
-    @media screen and (max-width: 990px) {
-      margin-right: 0;
-    }
+    width: calc(100% - 1.5px);
 
     &::before {
       content: "";
