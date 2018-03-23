@@ -28,11 +28,12 @@ const Wrapper = styled("header")`
 `
 
 // Contains logo, name, subtitle
-const Brand = styled("div")`
+const Brand = styled(Link)`
   display: flex;
   flex-direction: row;
-  flex-grow: 1;
   align-items: center;
+  text-decoration: none;
+  margin-right: auto;
 
   /* Bump down menu before things get too cramped */
   margin-bottom: ${rhythm(1 / 2)};
@@ -98,14 +99,15 @@ const MenuA = MenuLink.withComponent("a")
 
 const Menu = ({ children, location }) => (
   <Wrapper>
-    <Brand>
-      <Link to="/">
-        <picture>
-          <source srcSet={LogoWEBP} type="image/webp" />
-          <source srcSet={LogoPNG} type="image/png" />
-          <Logo src={LogoPNG} />
-        </picture>
-      </Link>
+    <Brand to="/" aria-label="Head back to the home page.">
+      <picture>
+        <source srcSet={LogoWEBP} type="image/webp" />
+        <source srcSet={LogoPNG} type="image/png" />
+        <Logo
+          src={LogoPNG}
+          alt="Happily sacrificing sanity in pursuit of pixel perfection."
+        />
+      </picture>
       {location.pathname !== "/resume" && (
         <div>
           <h1>Christian Gaetano</h1>

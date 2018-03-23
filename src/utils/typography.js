@@ -1,13 +1,14 @@
 import Typography from "typography"
-import gray from "gray-percentage"
+
+import colors from "../utils/colors"
 
 const typography = new Typography({
   baseFontSize: "18px",
   baseLineHeight: 1.45,
   headerFontFamily: ["Lato", "sans-serif"],
   headerWeight: 400,
-  headerColor: gray(30),
-  bodyColor: gray(30),
+  headerColor: colors.defaultText,
+  bodyColor: colors.defaultText,
   bodyFontFamily: ["Lora", "serif"],
   googleFonts: [
     {
