@@ -8,6 +8,10 @@ import { adjustFontSizeTo } from "../utils/typography"
 
 import Divider from "../components/divider"
 
+// Timeline images
+import gquadPNG from "../images/timeline/gquad.png"
+import gquadWEBP from "../images/timeline/gquad.webp"
+
 export default () => (
   <div>
     <Helmet>
@@ -45,5 +49,14 @@ export default () => (
     </p>
     <Divider />
     <h3>Once upon a time...</h3>
+    <p>I graduated from college with a Bachelor of Science in Biochemistry.</p>
+    <picture>
+      <source srcSet={gquadWEBP} type="image/webp" />
+      <source srcSet={gquadPNG} type="image/png" />
+      <img
+        src={gquadPNG}
+        alt="The focus of my biochemistry work was the RNA G-quadruplex, a specialized structure in which RNA nucleotides form planes that stack on top of each other like pieces of paper."
+      />
+    </picture>
   </div>
 )

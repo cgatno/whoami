@@ -53,6 +53,13 @@ const Content = styled("div")`
 
   /* Selective styling based on current path */
   ${props => (props.currentPath === "/" ? "margin: 0 auto;" : "")};
+
+  /* Image formatting */
+  img {
+    max-width: 100%;
+    margin: ${rhythm(1)} auto;
+    display: block;
+  }
 `
 
 class Template extends React.Component {
