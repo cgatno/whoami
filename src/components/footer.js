@@ -1,6 +1,7 @@
 import * as React from "react"
 import styled from "react-emotion"
 import gray from "gray-percentage"
+import Link from "gatsby-link"
 import FontAwesomeIcon from "@fortawesome/react-fontawesome"
 import faInsta from "@fortawesome/fontawesome-free-brands/faInstagram"
 import faTwitter from "@fortawesome/fontawesome-free-brands/faTwitter"
@@ -25,9 +26,18 @@ const Wrapper = styled("footer")`
   color: ${gray(60)};
 `
 
-const Copyright = styled("small")`
+const Column = styled("div")`
   flex-grow: 1;
+  flex-direction: column;
+`
+
+const SmallText = styled("small")`
   ${adjustFontSizeTo("10px")};
+  display: block;
+
+  a {
+    color: inherit;
+  }
 `
 
 const SocialLink = styled("a")`
@@ -101,9 +111,14 @@ const InstaLink = styled("a")`
 
 const Footer = () => (
   <Wrapper>
-    <Copyright>
-      Copyright &copy; 2018 Christian Gaetano. All Rights Reserved.
-    </Copyright>
+    <Column>
+      <SmallText>
+        Copyright &copy; 2018 Christian Gaetano. All Rights Reserved.
+      </SmallText>
+      <SmallText>
+        <Link to="/privacy">I respect your privacy!</Link>
+      </SmallText>
+    </Column>
     <div>
       <InstaLink
         href="https://instagram.com/cgatno"

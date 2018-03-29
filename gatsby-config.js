@@ -1,4 +1,7 @@
 module.exports = {
+  siteMetadata: {
+    siteUrl: "https://christiangaetano.com",
+  },
   plugins: [
     {
       resolve: `gatsby-plugin-typography`,
@@ -28,8 +31,11 @@ module.exports = {
       resolve: `gatsby-plugin-google-analytics`,
       options: {
         trackingId: "UA-54367226-6",
+        respectDNT: true,
+        anonymize: true,
       },
     },
+    { resolve: `gatsby-plugin-sitemap`, options: { exclude: ["/privacy"] } },
     `gatsby-plugin-emotion`,
     `gatsby-plugin-react-helmet`,
     `gatsby-plugin-netlify`,

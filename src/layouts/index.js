@@ -48,11 +48,8 @@ const PageWrapper = styled("main")`
 `
 
 const Content = styled("div")`
-  max-width: 600px;
   position: relative;
-
-  /* Selective styling based on current path */
-  ${props => (props.currentPath === "/" ? "margin: 0 auto;" : "")};
+  width: 100%;
 
   /* Image formatting */
   img {
@@ -71,9 +68,7 @@ class Template extends React.Component {
           htmlAttributes={{ lang: "en-US" }}
         />
         <Menu location={this.props.location} />
-        <Content currentPath={window.location.pathname}>
-          {this.props.children()}
-        </Content>
+        <Content>{this.props.children()}</Content>
         <Footer />
       </PageWrapper>
     )

@@ -9,6 +9,10 @@ import { rhythm, adjustFontSizeTo } from "../utils/typography"
 /* eslint-enable import/named */
 import colors from "../utils/colors"
 
+const ResumeWrapper = styled("div")`
+  max-width: 600px;
+`
+
 // Extra large header with name
 const Name = styled("h1")`
   ${adjustFontSizeTo(`${18 * 3}px`)};
@@ -103,7 +107,7 @@ const PDFDownloadLink = styled("a")`
 export default () => (
   <ScrollPercentage>
     {percentage => (
-      <div>
+      <ResumeWrapper>
         <PDFDownloadLink
           href="documents/resume.pdf"
           stick={percentage.toPrecision(2) >= 0.7}
@@ -215,7 +219,7 @@ export default () => (
             </ul>
           </SubSection>
         </Section>
-      </div>
+      </ResumeWrapper>
     )}
   </ScrollPercentage>
 )

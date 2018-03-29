@@ -20,6 +20,11 @@ const typography = new Typography({
       styles: ["400", "700"],
     },
   ],
+  overrideStyles: () => ({
+    h1: {
+      lineHeight: 1.25,
+    },
+  }),
 })
 
 export default typography

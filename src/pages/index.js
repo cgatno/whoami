@@ -2,18 +2,19 @@ import * as React from "react"
 import Helmet from "react-helmet"
 import styled from "react-emotion"
 
-/* eslint-disable import/named */
-import { adjustFontSizeTo } from "../utils/typography"
-/* eslint-enable import/named */
-
 import Divider from "../components/divider"
 
 // Timeline images
 import gquadPNG from "../images/timeline/gquad.png"
 import gquadWEBP from "../images/timeline/gquad.webp"
 
+const IndexWrapper = styled("div")`
+  max-width: 600px;
+  margin: 0 auto;
+`
+
 export default () => (
-  <div>
+  <IndexWrapper>
     <Helmet>
       <title>
         Christian Gaetano — JavaScript Developer and Seattle Dog Dad
@@ -58,5 +59,5 @@ export default () => (
         alt="The focus of my biochemistry work was the RNA G-quadruplex, a specialized structure in which RNA nucleotides form planes that stack on top of each other like pieces of paper."
       />
     </picture>
-  </div>
+  </IndexWrapper>
 )
