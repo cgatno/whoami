@@ -109,7 +109,7 @@ export default () => (
     {percentage => (
       <ResumeWrapper>
         <PDFDownloadLink
-          href="documents/resume.pdf"
+          href="documents/Christian Gaetano%20-%20Full%20Stack%20Web%20Engineer.pdf"
           stick={percentage.toPrecision(2) >= 0.7}
           download
         >
@@ -125,7 +125,7 @@ export default () => (
         </Helmet>
         <header>
           <Name>Christian Gaetano</Name>
-          <h3>Full Stack Web Developer</h3>
+          <h3>Full Stack Web Engineer</h3>
           <HorizontalList sans>
             <li>Seattle, WA</li>
             <li>
@@ -141,42 +141,44 @@ export default () => (
         <Section>
           <SectionHeader>Summary</SectionHeader>
           <p>
-            Driven and focused (and sometimes whimsical) JavaScript developer
-            combining accredited biochemistry background with years of software
-            development experience to deliver innovative, tested infrastructure
-            solutions and engaging, delightful web experiences. Eager to
-            collaborate with dedicated team members on cutting edge projects
-            that push the boundaries of web technology to deliver novel
-            products.
+            Biochemist turned software engineer with multiple years of
+            experience in back-end and front-end application development,
+            JavaScript programming best practices, and marketable technical
+            writing. Eager to transition to a challenging Front-End or Full
+            Stack Engineering role within a team looking to innovate creative
+            solutions at a large scale.
           </p>
         </Section>
         <Section>
           <SectionHeader>Professional Experience</SectionHeader>
           <SubSection>
             <SubHeader>GrapeCity, Inc.</SubHeader>
-            <p>Full Stack Web Developer, Feb 2017 &ndash; Present</p>
+            <p>Full Stack Web Engineer, Feb 2017 &ndash; Present</p>
             <ul>
               <li>
-                Developed an Express.js-based Node.js app to power new
-                production marketing website
+                Designed and built Node.js powered static site generator based
+                on Metalsmith platform
               </li>
               <li>
-                Devised MongoDB schema for session storage and user
-                authentication, integrated with Express
+                Worked with back-end engineering team to implement user
+                authentication and account management powered by MongoDB and
+                Express.js
               </li>
               <li>
-                Planned and led implementation of new JavaScript code quality
-                standards via source control strategy, code review, ESLint and
-                Jest unit testing
+                Developed content search and account management applications
+                using React and related technologies (CSS-in-JS, Flow, Babel)
               </li>
               <li>
-                Created server-rendered UI layouts using Handlebars templating
-                engine and SCSS
+                Led team-wide code quality initiatives: systematic code review,
+                standardized linting, Gitflow Workflow
               </li>
               <li>
-                Integrated novel DevOps workflows using Grunt task runner,
-                Metalsmith, and Node.js infrastructure to facilitate quick
-                development, deployment and content updates
+                Participated in brand style guide development and front-end UI
+                implementation based on design mockups
+              </li>
+              <li>
+                Planned and authored Modern JavaScript Frameworks e-book with
+                hundreds of daily downloads
               </li>
             </ul>
           </SubSection>
@@ -184,20 +186,43 @@ export default () => (
             <p>Technical Engagement Engineer, Oct 2016 &ndash; Feb 2017</p>
             <ul>
               <li>
-                Created product samples for JavaScript UI control product line,
-                Wijmo
+                Provided low-level technical support and strategic consultation
+                to corporate customers using Wijmo JavaScript UI Framework
               </li>
               <li>
-                Inspected, updated and generated documentation and knowledge
-                base articles for all product lines
+                Authored several technical blog posts with thousands of monthly
+                user impressions
               </li>
               <li>
-                Wrote blog posts summarizing the latest JavaScript development
-                trends
+                Developed product demos using plain JavaScript, React, Angular,
+                and Vue
               </li>
               <li>
-                Created innovative product demos to showcase product features
-                and companion tutorial blogs
+                Bridged communication between Wijmo product team and developer
+                community, including bug report and feature request logging
+              </li>
+            </ul>
+          </SubSection>
+          <SubSection>
+            <SubHeader>
+              National Science Foundation REU Leadership Group
+            </SubHeader>
+            <p>
+              Design and Web Development Consultant, Jan 2016 &ndash; Feb 2018
+            </p>
+            <ul>
+              <li>
+                Designed and produced new brand assets and strategy in
+                collaboration with group members
+              </li>
+              <li>
+                Migrated existing copy to new website with updated branding,
+                responsive layout, and analytics tracking
+              </li>
+              <li>
+                Optimized content for search visibility and target audience,
+                increasing session duration by 400% and decreasing bounce rate
+                by 20% over three months
               </li>
             </ul>
           </SubSection>
@@ -209,13 +234,14 @@ export default () => (
             <p>B.S. Biochemistry, 2012 &ndash; 2016</p>
             <ul>
               <li>
-                Hands-on, independent research and iterative project development
+                Graduated Summa Cum Laude, chosen as Bayer School General
+                Excellence Awardee
               </li>
-              <li>Summa Cum Laude / Minors in Biology and Mathematics</li>
               <li>
-                Undergraduate Honors Thesis on fragile X syndrome pathogenesis
+                Defended honors thesis on role of G-quadruplex RNA structures in
+                fragile X syndrome pathogenesis
               </li>
-              <li>2016 Bayer School General Excellence Awardee</li>
+              <li>Minor degree in mathematics</li>
             </ul>
           </SubSection>
         </Section>

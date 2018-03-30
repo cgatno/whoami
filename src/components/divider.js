@@ -1,5 +1,4 @@
 import styled from "react-emotion"
-import gray from "gray-percentage"
 
 /* eslint-disable import/named */
 import { rhythm } from "../utils/typography"

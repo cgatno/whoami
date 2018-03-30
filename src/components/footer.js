@@ -116,7 +116,7 @@ const Footer = () => (
         Copyright &copy; 2018 Christian Gaetano. All Rights Reserved.
       </SmallText>
       <SmallText>
-        <Link to="/privacy">I respect your privacy!</Link>
+        <Link to="/privacy">I respect your privacy</Link>
       </SmallText>
     </Column>
     <div>
