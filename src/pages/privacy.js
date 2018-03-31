@@ -52,9 +52,7 @@ export default class Privacy extends React.Component {
       <div>
         <Helmet>
           <meta name="robots" content="noindex" />
-          <title>
-            Christian Gaetano — JavaScript Developer and Seattle Dog Dad
-          </title>
+          <title>Christian Gaetano — Opt Out of Site Tracking</title>
           <link rel="canonical" href="https://christiangaetano.com/privacy" />
           <meta
             name="description"

@@ -133,11 +133,11 @@ export default class Resume extends React.Component {
           Download a PDF
         </PDFDownloadLink>
         <Helmet>
-          <title>Christian Gaetano — Resume</title>
+          <title>Christian Gaetano — Full Stack Web Engineer — Resume</title>
           <link rel="canonical" href="https://christiangaetano.com/resume" />
           <meta
             name="description"
-            content="Biochemist turned software developer who's downright crazy about building for the web. Right now, I work with full stack JavaScript at GrapeCity, but I also spend lots of time working on open source projects, pretending to be a designer, and writing about life. Climb aboard to see what I'm up to and get in touch!"
+            content="For you professional types, check out a listing of my work experiences and education online. If you're stretched for time, you can download a PDF, too!"
           />
         </Helmet>
         <header>
