@@ -2,7 +2,7 @@ import * as React from "react"
 import Helmet from "react-helmet"
 import styled from "react-emotion"
 import gray from "gray-percentage"
-import ScrollPercentage from "react-scroll-percentage"
+import Observer from "react-intersection-observer"
 
 /* eslint-disable import/named */
 import { rhythm, adjustFontSizeTo } from "../utils/typography"
@@ -87,8 +87,8 @@ const PDFDownloadLink = styled("a")`
   color: ${gray(70)};
   text-decoration: none;
   display: block;
-  position: fixed;
-  bottom: ${props => (props.stick ? "122px" : "10px")};
+  position: ${props => (props.stick ? "absolute" : "fixed")};
+  bottom: ${props => (props.stick ? `calc(-${rhythm(2)} + 10px)` : "10px")};
   right: calc((100% - 960px) / 2);
   transition-property: color;
 
@@ -104,13 +104,30 @@ const PDFDownloadLink = styled("a")`
   }
 `
 
-export default () => (
-  <ScrollPercentage>
-    {percentage => (
+const ScrollObserver = styled("div")`
+  position: absolute;
+  width: 100%;
+  bottom: -${rhythm(2)};
+  left: 0;
+  display: block;
+`
+
+export default class Resume extends React.Component {
+  constructor(props) {
+    super(props)
+
+    // Track whether footer has been reached
+    this.state = {
+      footerInView: false,
+    }
+  }
+
+  render() {
+    return (
       <ResumeWrapper>
         <PDFDownloadLink
           href="documents/Christian Gaetano%20-%20Full%20Stack%20Web%20Engineer.pdf"
-          stick={percentage.toPrecision(2) >= 0.7}
+          stick={this.state.footerInView}
           download
         >
           Download a PDF
@@ -245,7 +262,12 @@ export default () => (
             </ul>
           </SubSection>
         </Section>
+        <ScrollObserver>
+          <Observer
+            onChange={footerInView => this.setState({ footerInView })}
+          />
+        </ScrollObserver>
       </ResumeWrapper>
-    )}
-  </ScrollPercentage>
-)
+    )
+  }
+}

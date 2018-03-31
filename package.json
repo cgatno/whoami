@@ -30,6 +30,7 @@
     "gray-percentage": "^2.0.0",
     "react-emotion": "^9.0.2",
     "react-helmet": "^5.2.0",
+    "react-intersection-observer": "^3.0.3",
     "react-scroll-percentage": "^1.0.4"
   },
   "peerDependencies": {
