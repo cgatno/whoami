@@ -49,15 +49,28 @@ export default () => (
       P.S. <i>You&apos;ve come to the right place</i>.
     </p>
     <Divider />
-    <h3>Once upon a time...</h3>
-    <p>I graduated from college with a Bachelor of Science in Biochemistry.</p>
-    <picture>
+    <h3>Once upon a time&hellip;</h3>
+    <p>
+      Back in the guilded age of 2016, I graduated from college with a Bachelor
+      of Science in <i>Biochemistry</i>. Working in a lab and meticulously
+      pipetting RNA was a far cry from my current day-to-day, and worst of all,
+      I wasn&apos;t allowed to eat lunch at my desk. But I loved it. In fact, I
+      was president of our school&apos;s American Chemical Society student
+      chapter, and I even presented and published some of my research results on
+      the role of G-quadruplex RNA structures in the development of a disease
+      called fragile X syndrome.
+    </p>
+    <p>
+      Even though I was devoted to studying biochemistry and putting in time in
+      the lab,{" "}
+    </p>
+    {/* <picture>
       <source srcSet={gquadWEBP} type="image/webp" />
       <source srcSet={gquadPNG} type="image/png" />
       <img
         src={gquadPNG}
         alt="The focus of my biochemistry work was the RNA G-quadruplex, a specialized structure in which RNA nucleotides form planes that stack on top of each other like pieces of paper."
       />
-    </picture>
+    </picture> */}
   </IndexWrapper>
 )

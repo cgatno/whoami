@@ -117,7 +117,7 @@ const Footer = () => (
       </SmallText>
       <SmallText>
         <Link to="/privacy">
-          I'm tracking you! (Unless you tell me not to) 🔒👀
+          I&apos;m tracking you, but I&apos;ll stop if you ask nicely. 🔒👀
         </Link>
       </SmallText>
     </Column>

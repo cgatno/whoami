@@ -167,7 +167,7 @@ export default class Resume extends React.Component {
           </p>
         </Section>
         <Section>
-          <SectionHeader>Professional Experience</SectionHeader>
+          <SectionHeader>Employment</SectionHeader>
           <SubSection>
             <SubHeader>GrapeCity, Inc.</SubHeader>
             <p>Full Stack Web Engineer, Feb 2017 &ndash; Present</p>
@@ -240,6 +240,21 @@ export default class Resume extends React.Component {
                 Optimized content for search visibility and target audience,
                 increasing session duration by 400% and decreasing bounce rate
                 by 20% over three months
+              </li>
+            </ul>
+          </SubSection>
+        </Section>
+        <Section>
+          <SectionHeader>For Fun</SectionHeader>
+          <SubSection>
+            <SubHeader>CodePen PGH</SubHeader>
+            <p>Meetup Co-organizer</p>
+            <ul>
+              <li>Helped plan meetup topics and themes</li>
+              <li>Coordinated venue procurement &amp; snack delivery</li>
+              <li>
+                Promoted attendee &ldquo;pens&rdquo; to CodePen for featured
+                recognition.
               </li>
             </ul>
           </SubSection>
