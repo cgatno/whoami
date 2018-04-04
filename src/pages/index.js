@@ -1,12 +1,13 @@
 import * as React from "react"
 import Helmet from "react-helmet"
 import styled from "react-emotion"
+import Link from "gatsby-link"
 
 import Divider from "../components/divider"
 
 // Timeline images
-import gquadPNG from "../images/timeline/gquad.png"
-import gquadWEBP from "../images/timeline/gquad.webp"
+// import gquadPNG from "../images/timeline/gquad.png"
+// import gquadWEBP from "../images/timeline/gquad.webp"
 
 const IndexWrapper = styled("div")`
   max-width: 600px;
@@ -38,31 +39,19 @@ export default () => (
       Since you&apos;ve managed to find my personal website, I&apos;m willing to
       bet you&apos;re on a mission to uncover all of my deepest, darkest
       secrets. Really though, you&apos;re probably looking for something
-      specific. If that&apos;s the case, feel free to head straight to my resume
-      or peruse my portfolio.
+      specific. If that&apos;s the case, feel free to head straight to my{" "}
+      <Link to="/resume">resume</Link> or peruse my portfolio.
     </p>
     <p>
-      Of course &mdash; if you&apos;re just here for a good time &mdash;{" "}
-      <i>please</i>, read on!
+      Of course &mdash; if you&apos;re just here for a good time* &mdash;{" "}
+      <i>please</i>, read on! You can check out a list of my latest writings
+      below. If you&apos;re feeling really adventurous, you can read more about
+      my ever changing story.
     </p>
     <p>
-      P.S. <i>You&apos;ve come to the right place</i>.
-    </p>
-    <Divider />
-    <h3>Once upon a time&hellip;</h3>
-    <p>
-      Back in the guilded age of 2016, I graduated from college with a Bachelor
-      of Science in <i>Biochemistry</i>. Working in a lab and meticulously
-      pipetting RNA was a far cry from my current day-to-day, and worst of all,
-      I wasn&apos;t allowed to eat lunch at my desk. But I loved it. In fact, I
-      was president of our school&apos;s American Chemical Society student
-      chapter, and I even presented and published some of my research results on
-      the role of G-quadruplex RNA structures in the development of a disease
-      called fragile X syndrome.
-    </p>
-    <p>
-      Even though I was devoted to studying biochemistry and putting in time in
-      the lab,{" "}
+      <small>
+        * <i>You&apos;ve come to the right place</i>.
+      </small>
     </p>
     {/* <picture>
       <source srcSet={gquadWEBP} type="image/webp" />
