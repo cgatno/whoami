@@ -37,8 +37,8 @@ export default class Privacy extends React.Component {
 
   setOptOutCookie() {
     // Check that opt out function exists, then call it
-    if (typeof window.gaOptOut === "function") {
-      window.gaOptOut()
+    if (typeof window.gaOptout === "function") {
+      window.gaOptout()
       this.setState({
         optedOut: true,
       })
