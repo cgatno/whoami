@@ -3,8 +3,6 @@ import Helmet from "react-helmet"
 import styled from "react-emotion"
 import Link from "gatsby-link"
 
-import Divider from "../components/divider"
-
 // Timeline images
 // import gquadPNG from "../images/timeline/gquad.png"
 // import gquadWEBP from "../images/timeline/gquad.webp"
