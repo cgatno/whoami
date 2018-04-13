@@ -120,10 +120,10 @@ const Menu = ({ children, location }) => (
         <MenuItem>
           <MenuLink to="/">Home</MenuLink>
         </MenuItem>
-        {/* <MenuItem>
-          <MenuLink to="/">Work</MenuLink>
-        </MenuItem>
         <MenuItem>
+          <MenuLink to="/work">Work</MenuLink>
+        </MenuItem>
+        {/* <MenuItem>
           <MenuLink to="/">Blog</MenuLink>
         </MenuItem> */}
         <MenuItem>

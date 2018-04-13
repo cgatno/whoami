@@ -19,6 +19,27 @@ const Name = styled("h1")`
   font-weight: 700;
 `
 
+// Specialized list for skills (mid dot delimeter)
+const DotList = styled("ul")`
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: inline-block;
+
+    &::after {
+      content: "\00b7";
+      display: inline-block;
+      margin: 0 5px;
+    }
+
+    &:last-child::after {
+      content: "";
+    }
+  }
+`
+
 // Specialized horizontal list with contact info
 const HorizontalList = styled("ul")`
   list-style: none;
@@ -275,6 +296,28 @@ export default class Resume extends React.Component {
               </li>
               <li>Minor degree in mathematics</li>
             </ul>
+          </SubSection>
+        </Section>
+        <Section>
+          <SectionHeader>Skills</SectionHeader>
+          <SubSection>
+            <DotList>
+              <li>Node.js & NPM</li>
+              <li>React</li>
+              <li>JavaScript</li>
+              <li>TypeScript</li>
+              <li>Flow</li>
+              <li>Babel</li>
+              <li>Git</li>
+              <li>Technical Writing</li>
+              <li>RESTful Architecture</li>
+              <li>C#</li>
+              <li>GraphQL</li>
+              <li>Static Site Generation</li>
+              <li>SEO</li>
+              <li>MongoDB</li>
+              <li>MySQL</li>
+            </DotList>
           </SubSection>
         </Section>
         <ScrollObserver>
