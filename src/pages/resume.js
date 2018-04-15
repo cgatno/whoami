@@ -29,7 +29,7 @@ const DotList = styled("ul")`
     display: inline-block;
 
     &::after {
-      content: "\00b7";
+      content: "\\00b7";
       display: inline-block;
       margin: 0 5px;
     }
@@ -147,7 +147,7 @@ export default class Resume extends React.Component {
     return (
       <ResumeWrapper>
         <PDFDownloadLink
-          href="documents/Christian Gaetano%20-%20Full%20Stack%20Web%20Engineer.pdf"
+          href="documents/Christian%20Gaetano%20-%20Full%20Stack%20Web%20Engineer.pdf"
           stick={this.state.footerInView}
           download
         >
@@ -302,7 +302,7 @@ export default class Resume extends React.Component {
           <SectionHeader>Skills</SectionHeader>
           <SubSection>
             <DotList>
-              <li>Node.js & NPM</li>
+              <li>Node.js &amp; NPM</li>
               <li>React</li>
               <li>JavaScript</li>
               <li>TypeScript</li>
@@ -311,7 +311,7 @@ export default class Resume extends React.Component {
               <li>Git</li>
               <li>Technical Writing</li>
               <li>RESTful Architecture</li>
-              <li>C#</li>
+              <li>C&#35;</li>
               <li>GraphQL</li>
               <li>Static Site Generation</li>
               <li>SEO</li>
@@ -322,7 +322,11 @@ export default class Resume extends React.Component {
         </Section>
         <ScrollObserver>
           <Observer
-            onChange={footerInView => this.setState({ footerInView })}
+            onChange={footerInView =>
+              this.setState({
+                footerInView,
+              })
+            }
           />
         </ScrollObserver>
       </ResumeWrapper>
