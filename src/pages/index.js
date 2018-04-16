@@ -3,10 +3,6 @@ import Helmet from "react-helmet"
 import styled from "react-emotion"
 import Link from "gatsby-link"
 
-// Timeline images
-// import gquadPNG from "../images/timeline/gquad.png"
-// import gquadWEBP from "../images/timeline/gquad.webp"
-
 const IndexWrapper = styled("div")`
   max-width: 600px;
   margin: 0 auto;
@@ -38,7 +34,8 @@ export default () => (
       bet you&apos;re on a mission to uncover all of my deepest, darkest
       secrets. Really though, you&apos;re probably looking for something
       specific. If that&apos;s the case, feel free to head straight to my{" "}
-      <Link to="/resume">resume</Link> or peruse my portfolio.
+      <Link to="/resume">resume</Link> or peruse my{" "}
+      <Link to="/work">portfolio</Link>.
     </p>
     <p>
       Of course &mdash; if you&apos;re just here for a good time* &mdash;{" "}

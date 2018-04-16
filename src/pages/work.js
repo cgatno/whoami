@@ -3,7 +3,9 @@ import Helmet from "react-helmet"
 import styled from "react-emotion"
 
 import PortfolioItem from "../components/portfolio-item"
+/* eslint-disable import/named */
 import { rhythm } from "../utils/typography"
+/* eslint-enable import/named */
 
 // Import portfolio imagery
 import NSFWebp from "../images/portfolio/chemnsfreu.webp"
