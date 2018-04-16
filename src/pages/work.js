@@ -60,7 +60,12 @@ export default class Work extends React.Component {
               images={[
                 { src: grapecityWebinarsWebp, type: "image/webp" },
                 { src: grapecityWebinarsPng, type: "image/png" },
-                { src: grapecityWebinarsPng, isFallback: true },
+                {
+                  src: grapecityWebinarsPng,
+                  isFallback: true,
+                  alt:
+                    "One of my most recent projects at GrapeCity was designing and implementing a new Webinars explorer.",
+                },
               ]}
             />
           </a>
@@ -86,7 +91,12 @@ export default class Work extends React.Component {
               images={[
                 { src: NSFWebp, type: "image/webp" },
                 { src: NSFPng, type: "image/png" },
-                { src: NSFPng, isFallback: true },
+                {
+                  src: NSFPng,
+                  isFallback: true,
+                  alt:
+                    "The NSF REU Leadership Group website takes advantage of gradients and imagery to draw in users.",
+                },
               ]}
             />
           </a>
@@ -114,7 +124,7 @@ export default class Work extends React.Component {
               images={[
                 { src: ebookWebp, type: "image/webp" },
                 { src: ebookJpg, type: "image/jpg" },
-                { src: ebookJpg, isFallback: true },
+                { src: ebookJpg, isFallback: true, alt: "" },
               ]}
             />
           </a>
@@ -139,7 +149,7 @@ export default class Work extends React.Component {
               images={[
                 { src: tuplesWebp, type: "image/webp" },
                 { src: tuplesPng, type: "image/png" },
-                { src: tuplesPng, isFallback: true },
+                { src: tuplesPng, isFallback: true, alt: "" },
               ]}
             />
           </a>
@@ -160,7 +170,12 @@ export default class Work extends React.Component {
               images={[
                 { src: rtPattersonWebp, type: "image/webp" },
                 { src: rtPattersonGif, type: "image/gif" },
-                { src: rtPattersonGif, isFallback: true },
+                {
+                  src: rtPattersonGif,
+                  isFallback: true,
+                  alt:
+                    "One of the first freelance projects I worked on, the R.T. Patterson site features lots of colorful branding with a navigation menu that slides on touch.",
+                },
               ]}
             />
           </a>
@@ -186,7 +201,12 @@ export default class Work extends React.Component {
               images={[
                 { src: melediaWebp, type: "image/webp" },
                 { src: melediaPng, type: "image/png" },
-                { src: melediaPng, isFallback: true },
+                {
+                  src: melediaPng,
+                  isFallback: true,
+                  alt:
+                    "The Meledia website is minimalist on purpose, putting an emphasis on our passion for using creativity to send concise, targeted messages.",
+                },
               ]}
             />
           </a>
