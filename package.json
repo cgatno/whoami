@@ -28,6 +28,7 @@
     "gatsby-plugin-sitemap": "^1.2.20",
     "gatsby-plugin-typography": "^1.7.17",
     "gray-percentage": "^2.0.0",
+    "node-vibrant": "^3.0.0",
     "react-emotion": "^9.0.2",
     "react-helmet": "^5.2.0",
     "react-intersection-observer": "^3.0.3",

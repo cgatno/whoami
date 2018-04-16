@@ -1,6 +1,7 @@
 import * as React from "react"
 import PropTypes from "prop-types"
 import styled from "react-emotion"
+import vibrant from "node-vibrant"
 
 /* eslint-disable import/named */
 import { rhythm } from "../utils/typography"
@@ -11,45 +12,91 @@ const PortfolioItemWrapper = styled("div")`
   flex-direction: column;
   justify-content: center;
   padding: ${rhythm(1)} ${rhythm(1.5)};
-
-  &:hover img {
-    max-width: 960px;
-    position: absolute;
+  background-color: ${props => props.bgColor};
+  transition: background-color 0.35s ease-in-out;
+  &:hover {
+    background-color: ${props => props.hoverColor};
   }
-
   img {
-    margin: 0;
-    padding: 0;
-    max-width: 100%;
-    transition: 1s ease-in-out;
+    width: 100%;
+    object-fit: cover;
   }
 `
 
-const PortfolioItem = ({ images, children, ...rest }) => (
-  <PortfolioItemWrapper {...rest}>
-    {images ? (
-      <picture>
-        {images.map(
-          image =>
-            image.isFallback ? (
-              <img
-                key={`fallback-${image.src}`}
-                src={image.src}
-                alt={image.alt}
-              />
-            ) : (
-              <source key={image.src} srcSet={image.src} type={image.type} />
-            )
+class PortfolioItem extends React.Component {
+  constructor(props) {
+    super(props)
+
+    // Each item will maintain a specific background color
+    // If images are supplied, grab background color from image
+    // Otherwise, use a random color from the gradient palette
+    // Always start out with white
+    this.state = {
+      bgColor: "transparent",
+      hoverColor: "transparent",
+    }
+  }
+
+  componentDidMount() {
+    // If item has images to show, use them to get a good background color
+    const { images } = this.props
+    if (images && images.length > 0) {
+      // First, get the easily processable fallback image
+      const fallback = images.find(image => image.isFallback)
+      // Make sure fallback was supplied, then get palette with Vibrant
+      if (fallback) {
+        vibrant
+          .from(fallback.src)
+          .getPalette()
+          .then(palette => {
+            // Update state once palette is retrieved
+            this.setState({
+              bgColor: palette.Vibrant.getHex(),
+              hoverColor: palette.DarkVibrant.getHex(),
+            })
+          })
+          .catch(err => console.error(err))
+      }
+    }
+  }
+
+  render() {
+    const { images, children, ...rest } = this.props
+    return (
+      <PortfolioItemWrapper
+        bgColor={this.state.bgColor}
+        hoverColor={this.state.hoverColor}
+        {...rest}
+      >
+        {images ? (
+          <picture>
+            {images.map(
+              image =>
+                image.isFallback ? (
+                  <img
+                    key={`fallback-${image.src}`}
+                    src={image.src}
+                    alt={image.alt}
+                  />
+                ) : (
+                  <source
+                    key={image.src}
+                    srcSet={image.src}
+                    type={image.type}
+                  />
+                )
+            )}
+          </picture>
+        ) : (
+          children
         )}
-      </picture>
-    ) : (
-      children
-    )}
-  </PortfolioItemWrapper>
-)
+      </PortfolioItemWrapper>
+    )
+  }
+}
 
 PortfolioItem.propTypes = {
-  children: PropTypes.arrayOf(PropTypes.node),
+  children: PropTypes.node,
   images: PropTypes.arrayOf(PropTypes.object),
 }
 
