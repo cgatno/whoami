@@ -11,7 +11,8 @@ const PortfolioItemWrapper = styled("div")`
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: ${rhythm(1)} ${rhythm(1.5)};
+  padding: ${rhythm(1)} ${props => (props.hasImage ? rhythm(1.5) : 0)};
+  height: 100%;
   background-color: ${props => props.bgColor};
   transition: background-color 0.35s ease-in-out;
   &:hover {
@@ -66,6 +67,7 @@ class PortfolioItem extends React.Component {
       <PortfolioItemWrapper
         bgColor={this.state.bgColor}
         hoverColor={this.state.hoverColor}
+        hasImage={images && images.length > 0}
         {...rest}
       >
         {images ? (
