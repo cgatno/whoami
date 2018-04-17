@@ -155,7 +155,7 @@ export default class Resume extends React.Component {
         </PDFDownloadLink>
         <Helmet>
           <title>Christian Gaetano — Full Stack Web Engineer — Resume</title>
-          <link rel="canonical" href="https://christiangaetano.com/resume" />
+          <link rel="canonical" href="https://christiangaetano.com/resume/" />
           <meta
             name="description"
             content="For you professional types, check out a listing of my work experiences and education online. If you're stretched for time, you can download a PDF, too!"

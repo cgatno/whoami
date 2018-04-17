@@ -53,7 +53,7 @@ export default class Privacy extends React.Component {
         <Helmet>
           <meta name="robots" content="noindex" />
           <title>Christian Gaetano — Opt Out of Site Tracking</title>
-          <link rel="canonical" href="https://christiangaetano.com/privacy" />
+          <link rel="canonical" href="https://christiangaetano.com/privacy/" />
           <meta
             name="description"
             content="WARNING: Spy satellites and Russian bots not welcome here! 🚫🛰 Check out my site's emphasis on privacy, and find out how to opt out of all analytics tracking."

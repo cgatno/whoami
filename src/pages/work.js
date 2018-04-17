@@ -43,7 +43,7 @@ export default class Work extends React.Component {
       <PortfolioGrid>
         <Helmet>
           <title>Christian Gaetano — Portfolio & Recent Work</title>
-          <link rel="canonical" href="https://christiangaetano.com/work" />
+          <link rel="canonical" href="https://christiangaetano.com/work/" />
           <meta
             name="description"
             content="I try to keep busy with side projects and open source work, but sometimes it gets hard to keep track of where I've been and where I'm going next! Check out an illustrated portfolio of some of my more recent endeavors along with older ones that still look surprisingly nice and shiny."
