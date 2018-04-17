@@ -38,6 +38,7 @@ module.exports = {
     { resolve: `gatsby-plugin-sitemap`, options: { exclude: ["/privacy"] } },
     `gatsby-plugin-emotion`,
     `gatsby-plugin-react-helmet`,
+    `gatsby-plugin-remove-trailing-slashes`,
     `gatsby-plugin-netlify`,
   ],
 }
