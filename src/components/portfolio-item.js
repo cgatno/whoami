@@ -22,6 +22,10 @@ const PortfolioItemWrapper = styled("div")`
     width: 100%;
     object-fit: cover;
   }
+
+  @media screen and (max-width: 505px) {
+    padding: ${rhythm(1)} ${props => (props.hasImage ? rhythm(1) : 0)};
+  }
 `
 
 class PortfolioItem extends React.Component {
