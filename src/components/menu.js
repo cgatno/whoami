@@ -121,13 +121,13 @@ const Menu = ({ children, location }) => (
           <MenuLink to="/">Home</MenuLink>
         </MenuItem>
         <MenuItem>
-          <MenuLink to="/work">Work</MenuLink>
+          <MenuLink to="/work/">Work</MenuLink>
         </MenuItem>
         {/* <MenuItem>
           <MenuLink to="/">Blog</MenuLink>
         </MenuItem> */}
         <MenuItem>
-          <MenuLink to="/resume">Resume</MenuLink>
+          <MenuLink to="/resume/">Resume</MenuLink>
         </MenuItem>
         <MenuItem>
           <MenuA href="https://github.com/cgatno" target="_cgatno_github">
