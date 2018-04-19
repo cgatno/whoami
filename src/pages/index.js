@@ -26,8 +26,8 @@ export default () => (
     <p>
       My name&apos;s Christian Gaetano. I&apos;m a software engineer with a
       passion for building delightful &amp; meaningful experiences on the web.
-      And even though it&apos;s not my day job, I love helping to design those
-      experiences when I can.
+      And even though it&apos;s not my day job, I love helping to visually
+      design those experiences when I can.
     </p>
     <p>
       Since you&apos;ve managed to find my personal website, I&apos;m willing to
