@@ -66,7 +66,9 @@ class Template extends React.Component {
         <Helmet
           bodyAttributes={{ class: HotBod }}
           htmlAttributes={{ lang: "en-US" }}
-        />
+        >
+          <meta name="theme-color" content={colors.primaryColorLight} />
+        </Helmet>
         <Menu location={this.props.location} />
         <Content>{this.props.children()}</Content>
         <Footer />
