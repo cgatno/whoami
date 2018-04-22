@@ -108,7 +108,7 @@ const Menu = ({ children, location }) => (
           alt="Happily sacrificing sanity in pursuit of pixel perfection."
         />
       </picture>
-      {location.pathname !== "/resume" && (
+      {!location.pathname.match(/\/resume\/?/) && (
         <div>
           <h1>Christian Gaetano</h1>
           <h2>Software Engineer &amp; Dabbling Designer</h2>
