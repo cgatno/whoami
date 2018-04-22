@@ -147,7 +147,7 @@ export default class Resume extends React.Component {
     return (
       <ResumeWrapper>
         <PDFDownloadLink
-          href="documents/Christian%20Gaetano%20Full%20Stack%20Web%20Developer.pdf"
+          href="/documents/Christian%20Gaetano%20Full%20Stack%20Web%20Developer.pdf"
           stick={this.state.footerInView}
           download
         >
@@ -302,21 +302,29 @@ export default class Resume extends React.Component {
           <SectionHeader>Skills</SectionHeader>
           <SubSection>
             <DotList>
-              <li>Node.js &amp; NPM</li>
+              <li>Node.js & NPM</li>
               <li>React</li>
-              <li>JavaScript</li>
-              <li>TypeScript</li>
-              <li>Flow</li>
+              <li>Angular</li>
               <li>Babel</li>
               <li>Git</li>
               <li>Technical Writing</li>
               <li>RESTful Architecture</li>
-              <li>C&#35;</li>
               <li>GraphQL</li>
-              <li>Static Site Generation</li>
+              <li>Static Sites</li>
               <li>SEO</li>
               <li>MongoDB</li>
               <li>MySQL</li>
+            </DotList>
+          </SubSection>
+        </Section>
+        <Section>
+          <SectionHeader>Programming Languages</SectionHeader>
+          <SubSection>
+            <DotList>
+              <li>JavaScript & TypeScript (fluent)</li>
+              <li>C# (proficient)</li>
+              <li>PHP (proficient)</li>
+              <li>C++ (prior experience)</li>
             </DotList>
           </SubSection>
         </Section>
