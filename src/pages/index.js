@@ -11,9 +11,7 @@ const IndexWrapper = styled("div")`
 export default () => (
   <IndexWrapper>
     <Helmet>
-      <title>
-        Christian Gaetano — JavaScript Developer and Seattle Dog Dad
-      </title>
+      <title>Christian Gaetano — Software Engineer and Seattle Dog Dad</title>
       <link rel="canonical" href="https://christiangaetano.com" />
       <meta
         name="description"

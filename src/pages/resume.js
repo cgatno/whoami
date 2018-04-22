@@ -147,14 +147,14 @@ export default class Resume extends React.Component {
     return (
       <ResumeWrapper>
         <PDFDownloadLink
-          href="documents/Christian%20Gaetano%20-%20Full%20Stack%20Web%20Engineer.pdf"
+          href="documents/Christian%20Gaetano%20Full%20Stack%20Web%20Developer.pdf"
           stick={this.state.footerInView}
           download
         >
           Download a PDF
         </PDFDownloadLink>
         <Helmet>
-          <title>Christian Gaetano — Full Stack Web Engineer — Resume</title>
+          <title>Christian Gaetano — Full Stack Web Developer — Resume</title>
           <link rel="canonical" href="https://christiangaetano.com/resume/" />
           <meta
             name="description"
@@ -163,7 +163,7 @@ export default class Resume extends React.Component {
         </Helmet>
         <header>
           <Name>Christian Gaetano</Name>
-          <h3>Full Stack Web Engineer</h3>
+          <h3>Full Stack Web Developer</h3>
           <HorizontalList sans>
             <li>Seattle, WA</li>
             <li>
@@ -191,7 +191,7 @@ export default class Resume extends React.Component {
           <SectionHeader>Employment</SectionHeader>
           <SubSection>
             <SubHeader>GrapeCity, Inc.</SubHeader>
-            <p>Full Stack Web Engineer, Feb 2017 &ndash; Present</p>
+            <p>Full Stack Web Developer, Feb 2017 &ndash; Present</p>
             <ul>
               <li>
                 Designed and built Node.js powered static site generator based
