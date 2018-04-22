@@ -24,6 +24,10 @@ const Wrapper = styled("footer")`
   border-top: 1px solid ${gray(80)};
   position: relative;
   color: ${gray(50)};
+
+  div {
+    margin: 10px 0;
+  }
 `
 
 const Column = styled("div")`
