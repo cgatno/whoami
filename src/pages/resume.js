@@ -275,7 +275,7 @@ export default class Resume extends React.Component {
               <li>Coordinated venue procurement &amp; snack delivery</li>
               <li>
                 Promoted attendee &ldquo;pens&rdquo; to CodePen for featured
-                recognition.
+                recognition
               </li>
             </ul>
           </SubSection>
