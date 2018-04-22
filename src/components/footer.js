@@ -23,7 +23,7 @@ const Wrapper = styled("footer")`
   padding-top: ${rhythm(1)};
   border-top: 1px solid ${gray(80)};
   position: relative;
-  color: ${gray(60)};
+  color: ${gray(50)};
 `
 
 const Column = styled("div")`
@@ -32,7 +32,7 @@ const Column = styled("div")`
 `
 
 const SmallText = styled("small")`
-  ${adjustFontSizeTo("10px")};
+  ${adjustFontSizeTo("11px")};
   display: block;
 
   a {

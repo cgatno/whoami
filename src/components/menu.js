@@ -46,7 +46,7 @@ const Brand = styled(Link)`
 
   h2 {
     margin: 0 0 0 ${3 / 18}em;
-    color: ${gray(54)};
+    color: ${gray(40)};
     ${adjustFontSizeTo(`${18 * (4 / 5)}px`)};
   }
 `

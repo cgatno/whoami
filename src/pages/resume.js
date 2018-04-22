@@ -105,7 +105,7 @@ const SubHeader = styled("span")`
 // Base positioning on overall scroll position to not go past footer
 const PDFDownloadLink = styled("a")`
   ${adjustFontSizeTo("12px")};
-  color: ${gray(70)};
+  color: ${gray(50)};
   text-decoration: none;
   display: block;
   position: ${props => (props.stick ? "absolute" : "fixed")};
@@ -121,7 +121,7 @@ const PDFDownloadLink = styled("a")`
   }
 
   &:hover {
-    color: ${gray(20)};
+    color: ${gray(10)};
   }
 `
 
