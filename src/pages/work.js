@@ -187,7 +187,7 @@ export default class Work extends React.Component {
           </p>
           <p style={{ margin: 0 }}>
             It was a lot of fun to develop requirements and iterate on designs,
-            plus we got to build a sweet mobile navigation menu that is plan{" "}
+            plus we got to build a sweet mobile navigation menu that is plain{" "}
             <i>smooth</i> on touch devices. (Which wasn&apos;t so easy at the
             time!)
           </p>

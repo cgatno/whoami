@@ -82,11 +82,13 @@ const InstaLink = styled("a")`
     mix-blend-mode: screen;
     padding: 0 2px;
     line-height: 1rem;
+    position: relative;
   }
 
   .bg {
     background: #000;
-    width: calc(100% - 1.5px);
+    width: 100%;
+    position: relative;
 
     &::before {
       content: "";
