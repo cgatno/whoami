@@ -6,10 +6,16 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "format": "prettier . --write"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.1.0",
+    "@astrojs/partytown": "^2.1.2",
     "astro": "^5.0.5"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "prettier-plugin-astro": "^0.14.1"
   }
 }
