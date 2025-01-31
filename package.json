@@ -13,6 +13,8 @@
   "dependencies": {
     "@astrojs/cloudflare": "^12.2.1",
     "@astrojs/tailwind": "^5.1.5",
+    "@fontsource-variable/fraunces": "^5.1.1",
+    "@fontsource-variable/plus-jakarta-sans": "^5.1.1",
     "astro": "^5.1.9",
     "tailwindcss": "^3.4.17"
   },
