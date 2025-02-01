@@ -1,3 +1,6 @@
 {
-  "prettier.documentSelectors": ["**/*.astro"]
+  "prettier.documentSelectors": ["**/*.astro"],
+  "tailwindCSS.includeLanguages": {
+    "astro": "html"
+  }
 }

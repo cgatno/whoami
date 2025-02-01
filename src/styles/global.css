@@ -1,1 +1,109 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+  --font-serif: "Fraunces Variable", ui-serif, Georgia, Cambria,
+    "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+
+  /* Light mode colors */
+  --color-primary: #401f71;
+  --color-primary-light: #9b7be1;
+  --color-secondary: #824d74;
+  --color-secondary-light: #d48fa3;
+  --color-accent: #be7b72;
+  --color-accent-light: #e7a599;
+  --color-highlight: #fdaf7b;
+  --color-background: #ffffff;
+  --color-dark-background: #1a1527;
+  --color-dark-code: #141020;
+}
+
+/* Dark mode colors */
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-primary: var(--color-primary-light);
+    --color-secondary: var(--color-secondary-light);
+    --color-accent: var(--color-accent-light);
+    --color-background: var(--color-dark-background);
+  }
+}
+
+/* Font assignments */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-serif);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-primary);
+}
+
+/* Common elements */
+a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-decoration-thickness: 0.1em;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  color: var(--color-secondary);
+}
+
+blockquote {
+  border-left: 4px solid var(--color-highlight);
+  padding-left: 1rem;
+  font-style: italic;
+  color: var(--color-accent);
+}
+
+pre {
+  background-color: var(--color-dark-code);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  color: var(--color-primary-light);
+}
+
+/* Utility classes */
+.text-primary {
+  color: var(--color-primary);
+}
+
+.text-secondary {
+  color: var(--color-secondary);
+}
+
+.text-accent {
+  color: var(--color-accent);
+}
+
+.text-highlight {
+  color: var(--color-highlight);
+}
+
+.bg-primary {
+  background-color: var(--color-primary);
+}
+
+.bg-secondary {
+  background-color: var(--color-secondary);
+}
+
+.bg-accent {
+  background-color: var(--color-accent);
+}
+
+.bg-highlight {
+  background-color: var(--color-highlight);
+}

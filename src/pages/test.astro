@@ -1,0 +1,19 @@
+---
+import Prose from "../components/Prose.astro";
+import Layout from "../layouts/Layout.astro";
+import { getEntry, render } from "astro:content";
+
+const entry = await getEntry("blog", "my-first-post");
+
+if (!entry) {
+  throw new Error("Could not find blog post.");
+}
+
+const { Content } = await render(entry);
+---
+
+<Layout>
+  <Prose>
+    <Content />
+  </Prose>
+</Layout>
