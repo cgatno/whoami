@@ -28,3 +28,11 @@ import "../styles/global.css";
     height: 100%;
   }
 </style>
+
+<script>
+  import { applyTheme, watchTheme } from "@whoami/lib/theme";
+
+  // Apply the theme on initial load and watch for changes
+  applyTheme();
+  watchTheme();
+</script>
