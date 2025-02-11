@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+    <!-- Background -->
+    <rect width="900" height="500" fill="#f8f8f8" />
+
+    <!-- Title -->
+    <text x="50" y="40" font-family="system-ui" font-size="24" font-weight="600" fill="#333">Cosmic
+        Color System</text>
+
+    <!-- Light Mode Section -->
+    <text x="50" y="80" font-family="system-ui" font-size="18" fill="#666">Light Mode</text>
+
+    <!-- Light Mode Swatches -->
+    <g transform="translate(50, 100)">
+        <!-- Stardust -->
+        <rect width="110" height="80" fill="oklch(98% 0.003 0)" stroke="#ccc" />
+        <text x="10" y="100" font-family="system-ui" font-size="14" fill="#666">Stardust</text>
+
+        <!-- Nebula -->
+        <rect x="130" width="110" height="80" fill="oklch(95% 0.02 60)" stroke="#ccc" />
+        <text x="140" y="100" font-family="system-ui" font-size="14" fill="#666">Nebula</text>
+
+        <!-- Galaxy -->
+        <rect x="260" width="110" height="80" fill="oklch(55% 0.2 295)" stroke="#ccc" />
+        <text x="270" y="100" font-family="system-ui" font-size="14" fill="#666">Galaxy</text>
+        <!-- Galaxy P3 indicator -->
+        <circle cx="100" cy="10" r="5" fill="#FF5733" />
+
+        <!-- Cosmos -->
+        <rect x="390" width="110" height="80" fill="oklch(70% 0.15 350)" stroke="#ccc" />
+        <text x="400" y="100" font-family="system-ui" font-size="14" fill="#666">Cosmos</text>
+
+        <!-- Nova -->
+        <rect x="520" width="110" height="80" fill="oklch(75% 0.18 45)" stroke="#ccc" />
+        <text x="530" y="100" font-family="system-ui" font-size="14" fill="#666">Nova</text>
+        <!-- Nova P3 indicator -->
+        <circle cx="620" cy="10" r="5" fill="#FF5733" />
+
+        <!-- Ink -->
+        <rect x="650" width="110" height="80" fill="oklch(16% 0.01 280)" stroke="#ccc" />
+        <text x="670" y="100" font-family="system-ui" font-size="14" fill="#666">Ink</text>
+    </g>
+
+    <!-- Dark Mode Section -->
+    <text x="50" y="280" font-family="system-ui" font-size="18" fill="#666">Dark Mode</text>
+
+    <!-- Dark Mode Swatches -->
+    <g transform="translate(50, 300)">
+        <!-- Abyss -->
+        <rect width="110" height="80" fill="oklch(15% 0.02 280)" stroke="#ccc" />
+        <text x="10" y="100" font-family="system-ui" font-size="14" fill="#666">Abyss</text>
+
+        <!-- Twilight -->
+        <rect x="130" width="110" height="80" fill="oklch(20% 0.03 285)" stroke="#ccc" />
+        <text x="140" y="100" font-family="system-ui" font-size="14" fill="#666">Twilight</text>
+
+        <!-- Aurora -->
+        <rect x="260" width="110" height="80" fill="oklch(75% 0.15 295)" stroke="#ccc" />
+        <text x="270" y="100" font-family="system-ui" font-size="14" fill="#666">Aurora</text>
+        <!-- Aurora P3 indicator -->
+        <circle cx="360" cy="10" r="5" fill="#FF5733" />
+
+        <!-- Zodiac -->
+        <rect x="390" width="110" height="80" fill="oklch(80% 0.12 350)" stroke="#ccc" />
+        <text x="400" y="100" font-family="system-ui" font-size="14" fill="#666">Zodiac</text>
+
+        <!-- Eclipse -->
+        <rect x="520" width="110" height="80" fill="oklch(80% 0.15 45)" stroke="#ccc" />
+        <text x="530" y="100" font-family="system-ui" font-size="14" fill="#666">Eclipse</text>
+        <!-- Eclipse P3 indicator -->
+        <circle cx="620" cy="10" r="5" fill="#FF5733" />
+
+        <!-- Starlight -->
+        <rect x="650" width="110" height="80" fill="oklch(98% 0.01 60)" stroke="#ccc" />
+        <text x="660" y="100" font-family="system-ui" font-size="14" fill="#666">Starlight</text>
+    </g>
+
+    <!-- P3 Indicator Legend -->
+    <g transform="translate(50, 440)">
+        <circle cx="10" cy="10" r="5" fill="#FF5733" />
+        <text x="20" y="15" font-family="system-ui" font-size="14" fill="#666">P3 enhanced color
+            available</text>
+    </g>
+</svg>
