@@ -3,7 +3,9 @@ import "@fontsource-variable/fraunces";
 import "@fontsource-variable/plus-jakarta-sans";
 import "@fontsource-variable/fira-code";
 
-import "../styles/global.css";
+import "@whoami/styles/global.css";
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 ---
 
 <!doctype html>
@@ -13,6 +15,8 @@ import "../styles/global.css";
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+    <link rel="canonical" href={canonicalURL} />
+
     <title>Astro Basics</title>
   </head>
   <body>
