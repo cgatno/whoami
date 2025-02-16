@@ -1,0 +1,122 @@
+---
+
+---
+
+<div class="gradient-container">
+  <div class="glass-gradient"></div>
+</div>
+
+<style>
+  .gradient-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--color-stardust);
+    z-index: 0;
+  }
+
+  .glass-gradient {
+    position: absolute;
+    /* Extend beyond container bounds to hide animation edges */
+    inset: -10%;
+    /* Scale up to compensate for negative inset */
+    width: 120%;
+    height: 120%;
+    background: linear-gradient(
+      135deg,
+      oklch(from var(--color-galaxy) l c h / 0.2),
+      oklch(from var(--color-cosmos) l c h / 0.3) 45%,
+      oklch(from var(--color-nova) l c h / 0.15) 75%
+    );
+    backdrop-filter: blur(200px);
+  }
+
+  .glass-gradient::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(
+        circle at 20% 20%,
+        oklch(from var(--color-galaxy) l c h / 0.4),
+        transparent 60%
+      ),
+      radial-gradient(
+        circle at 80% 80%,
+        oklch(from var(--color-nova) l c h / 0.3),
+        transparent 60%
+      );
+    animation: glow-shift 12s ease-in-out infinite;
+  }
+
+  .glass-gradient::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at 70% 25%,
+      oklch(from var(--color-cosmos) l c h / 0.2),
+      transparent 50%
+    );
+    animation: pulse 8s ease-in-out infinite;
+  }
+
+  @keyframes glow-shift {
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+    50% {
+      transform: translate(-5%, 5%);
+    }
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 0.2;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* Dark theme variation */
+  :root[data-theme="dark"] .gradient-container {
+    background: var(--color-abyss);
+  }
+
+  :root[data-theme="dark"] .glass-gradient {
+    background: linear-gradient(
+      135deg,
+      oklch(from var(--color-aurora) l c h / 0.2),
+      oklch(from var(--color-zodiac) l c h / 0.3) 45%,
+      oklch(from var(--color-eclipse) l c h / 0.15) 75%
+    );
+  }
+
+  :root[data-theme="dark"] .glass-gradient::before {
+    background:
+      radial-gradient(
+        circle at 20% 20%,
+        oklch(from var(--color-aurora) l c h / 0.4),
+        transparent 60%
+      ),
+      radial-gradient(
+        circle at 80% 80%,
+        oklch(from var(--color-eclipse) l c h / 0.3),
+        transparent 60%
+      );
+  }
+
+  :root[data-theme="dark"] .glass-gradient::after {
+    background: radial-gradient(
+      circle at 70% 25%,
+      oklch(from var(--color-zodiac) l c h / 0.2),
+      transparent 50%
+    );
+  }
+</style>

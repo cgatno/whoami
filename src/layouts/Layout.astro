@@ -1,10 +1,14 @@
 ---
+// Fonts
 import "@fontsource-variable/fraunces";
 import "@fontsource-variable/plus-jakarta-sans";
 import "@fontsource-variable/fira-code";
 
+// Global styles
+import "@whoami/styles/reset.css";
 import "@whoami/styles/global.css";
 
+// Used to set canonical link in the head
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 ---
 
@@ -17,7 +21,12 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta name="generator" content={Astro.generator} />
     <link rel="canonical" href={canonicalURL} />
 
-    <title>Astro Basics</title>
+    <title>Christian Gaetano | ML Engineer & Scientific Software Expert</title>
+
+    <meta
+      name="description"
+      content="Machine learning engineer with a biochemistry background, building AI systems for scientific discovery. Experienced in scalable software solutions for complex biological problems."
+    />
   </head>
   <body>
     <slot />
