@@ -1,16 +1,12 @@
 ---
-
+import { Content, frontmatter } from "@whoami/content/home.md";
 ---
 
 <main class="welcome-container">
   <article>
-    <h1>hello,</h1>
+    <h1>{frontmatter.title}</h1>
     <p>
-      My name is <strong>Christian Gaetano</strong>, and I'm a relentlessly
-      curious engineer with over seven years of experience building delightful
-      web applications and a passion for architecting maintainable distributed
-      systems at scale. Currently focused on developing ML systems to understand
-      and combat neurodegenerative disorders.
+      <Content />
     </p>
   </article>
 </main>

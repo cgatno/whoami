@@ -9,7 +9,12 @@ import "@whoami/styles/reset.css";
 import "@whoami/styles/global.css";
 
 // Used to set canonical link in the head
-const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+import { removeTrailingForwardSlash } from "@whoami/lib/path";
+const canonicalURL = removeTrailingForwardSlash(
+  new URL(Astro.url.pathname, Astro.site),
+);
+
+import { frontmatter } from "@whoami/content/home.md";
 ---
 
 <!doctype html>
@@ -21,12 +26,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta name="generator" content={Astro.generator} />
     <link rel="canonical" href={canonicalURL} />
 
-    <title>Christian Gaetano | ML Engineer & Scientific Software Expert</title>
+    <title>{frontmatter.meta_title}</title>
 
-    <meta
-      name="description"
-      content="Machine learning engineer with a biochemistry background, building AI systems for scientific discovery. Experienced in scalable software solutions for complex biological problems."
-    />
+    <meta name="description" content={frontmatter.meta_description} />
   </head>
   <body>
     <slot />
