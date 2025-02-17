@@ -16,7 +16,8 @@
     "@fontsource-variable/fira-code": "^5.1.1",
     "@fontsource-variable/fraunces": "^5.1.1",
     "@fontsource-variable/plus-jakarta-sans": "^5.1.1",
-    "astro": "^5.3.0"
+    "astro": "^5.3.0",
+    "motion": "^12.4.3"
   },
   "devDependencies": {
     "@typescript-eslint/parser": "^8.24.0",
