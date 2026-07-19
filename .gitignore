@@ -13,9 +13,15 @@ yarn-error.log*
 pnpm-debug.log*
 
 
+# cloudflare / wrangler local state
+.wrangler/
+
 # environment variables
 .env
-.env.production
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
 
 # macOS-specific files
 .DS_Store
