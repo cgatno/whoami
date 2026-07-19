@@ -51,7 +51,7 @@ Add Motion only for a specific interaction that genuinely earns it.
 - **Sätteri is the default markdown processor.** remark/rehype plugins require opting back in via
   `@astrojs/markdown-remark`. Prefer Sätteri's built-in features over reaching for a plugin.
 - **`site` must be set in `astro.config.mjs`** or `@astrojs/sitemap` silently produces nothing.
-- Node 22+ required. Local dev is on Node 26.x; see `.nvmrc`.
+- Node 22.12+ required (`engines` in `package.json`). Local dev is on Node 26.x.
 - Cloudflare Workers runs workerd, not Node—local Node version only affects build tooling.
 
 ## Design direction
@@ -77,30 +77,54 @@ dark modes.
 
 ---
 
+## Deployment and branches
+
+| Branch    | Deploys to                                | Via                                        |
+| --------- | ----------------------------------------- | ------------------------------------------ |
+| `main`    | `whoami.cgatno.workers.dev`               | Workers Builds → `wrangler deploy`         |
+| `preview` | `<version>-whoami.cgatno.workers.dev`     | Workers Builds → `wrangler versions upload` |
+| `master`  | Netlify, serving both live domains        | Legacy. Do not touch; delete at cutover.   |
+
+Superseded history lives in tags—`archive/v1-netlify` (2018 site) and `archive/v2-astro5`
+(2025 attempt). Nothing else from those branches needs to survive.
+
+**Two settings look like bugs and are not. Don't "fix" them:**
+
+- **`site` points at the workers.dev origin, not `christiangaetano.com`.** A production
+  canonical on a page that also serves `X-Robots-Tag: noindex` risks the noindex being
+  consolidated onto the canonical target—i.e. deindexing the live site.
+- **`public/_headers` applies `noindex` unscoped (`/*`), not scoped to workers.dev.**
+  `_headers` permits only ONE wildcard per rule, so `https://*.workers.dev/*` is invalid
+  and gets skipped at build with only a warning. That exact bug left every path except `/`
+  indexable on the previous deployment for a year.
+
+`_headers` applies to **static assets only**. A route with `prerender = false` won't get the
+noindex header and needs it set in middleware instead.
+
+### DNS cutover checklist
+
+1. `site` → `https://christiangaetano.com`
+2. Delete the `noindex` rule from `public/_headers`
+3. `"workers_dev": false` in `wrangler.jsonc`, once a custom domain is attached
+4. Point DNS at Cloudflare, retire Netlify, delete `master`
+5. Verify by curling real paths—not by reading config
+
 ## Development
 
-When starting the dev server, use background mode:
+Start the dev server with `astro dev --background`; manage it via `astro dev stop`, `status`,
+and `logs`. To run a throwaway second server alongside a running one, use
+`astro dev --ignore-lock`—those instances are invisible to `stop`/`status`/`logs`.
 
-```
-astro dev --background
-```
-
-Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
-
-To run a second, throwaway dev server alongside an existing one, use `astro dev --ignore-lock`.
-Note that instances started this way are invisible to `stop`, `status`, and `logs`.
+Note `astro dev` does not apply `_headers`. To verify header behavior, build and run
+`wrangler dev` against `dist/`.
 
 ## Documentation
 
-Full documentation: https://docs.astro.build
+Astro: https://docs.astro.build — [routing and middleware](https://docs.astro.build/en/guides/routing/),
+[components](https://docs.astro.build/en/basics/astro-components/),
+[content collections](https://docs.astro.build/en/guides/content-collections/),
+[styling](https://docs.astro.build/en/guides/styling/) (ignore the Tailwind portion).
 
-Consult these guides before working on related tasks:
-
-- [Adding pages, dynamic routes, or middleware](https://docs.astro.build/en/guides/routing/)
-- [Working with Astro components](https://docs.astro.build/en/basics/astro-components/)
-- [Using React, Vue, Svelte, or other framework components](https://docs.astro.build/en/guides/framework-components/)
-  — reference only; see the decisions above. No framework renderer is installed.
-- [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
-- [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
-  — the styling guide applies; the Tailwind portion does not. Plain CSS only.
-- [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+Cloudflare work has dedicated skills—`wrangler`, `workers-best-practices`, `cloudflare`,
+`web-perf`. Prefer them, and prefer live docs over recall: Workers config fields and
+`_headers` semantics have both changed recently.
