@@ -120,11 +120,12 @@ Note `astro dev` does not apply `_headers`. To verify header behavior, build and
 
 ## Documentation
 
-Astro: https://docs.astro.build — [routing and middleware](https://docs.astro.build/en/guides/routing/),
-[components](https://docs.astro.build/en/basics/astro-components/),
-[content collections](https://docs.astro.build/en/guides/content-collections/),
-[styling](https://docs.astro.build/en/guides/styling/) (ignore the Tailwind portion).
+**Prefer retrieval over recall.** Astro 7 and the Workers platform both shipped breaking
+changes recently; pretrained knowledge of config fields, `_headers` semantics, and the
+markdown pipeline is unreliable.
 
-Cloudflare work has dedicated skills—`wrangler`, `workers-best-practices`, `cloudflare`,
-`web-perf`. Prefer them, and prefer live docs over recall: Workers config fields and
-`_headers` semantics have both changed recently.
+- **Astro** — the `astro-docs` MCP server (`search_astro_docs`) covers core docs, the v7
+  upgrade guide, and Starlight, and is the fastest path to a citable answer. It's local
+  client config, so it may not be present; fall back to https://docs.astro.build.
+- **Cloudflare** — dedicated skills: `wrangler`, `workers-best-practices`, `cloudflare`,
+  `web-perf`. All four are retrieval-first by design.
