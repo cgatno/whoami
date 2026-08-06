@@ -54,6 +54,26 @@ Add Motion only for a specific interaction that genuinely earns it.
 - Node 22.12+ required (`engines` in `package.json`). Local dev is on Node 26.x.
 - Cloudflare Workers runs workerd, not Node—local Node version only affects build tooling.
 
+## Dependencies
+
+**Do not run `npm audit fix --force` here.** It proposes *downgrading*
+`@astrojs/cloudflare` to 12.6.x and `wrangler` to 4.35.x, which reintroduces a
+high-severity SSRF advisory and the `sharp`/libvips CVEs. npm optimizes for fewest
+advisory hits, not most-patched, so it oscillates between two vulnerable states.
+Current versions are the most-patched available—keep them.
+
+The outstanding `npm audit` findings all trace to `undici` via
+`wrangler → miniflare`. Nothing there ships: the deployed Worker is wrangler's
+no-op template and every request is served by the static assets binding. Treat
+these as build-tooling findings and wait for miniflare to bump, rather than
+forcing a version with `overrides`.
+
+**npm 12 blocks dependency install scripts by default.** Nothing in this project
+needs them—`esbuild` and `workerd` resolve binaries through
+`optionalDependencies` platform packages, not `postinstall`. Leave `allowScripts`
+empty; verify with `npm approve-scripts --allow-scripts-pending` rather than
+approving on sight.
+
 ## Design direction
 
 **Minimalism is not the goal.** Demonstrating frontend craft and interaction care is part of the
