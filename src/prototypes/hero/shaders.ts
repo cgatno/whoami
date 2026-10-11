@@ -44,14 +44,15 @@ uniform sampler2D uHeight;
 uniform vec2 uHeightSize;
 uniform float uNext;   // level of the next high or low, 0..1
 
-// The page's text, rasterized into a mask: R = the name, B = the tagline,
-// G = small text.
+// The page's text, rasterized into a mask that fits it closely: R = the
+// name, B = the tagline, G = small text.
 uniform sampler2D uText;
-// Smooth blurs of that mask, covering the same rectangle: R = all text,
-// tight; G = all text, wide; B = tagline and small text only, tight.
+uniform vec4 uTextRect;   // x, y, width, height in device px, origin top-left
+// Smooth blurs of that mask over a wider rectangle: R = all text, tight;
+// G = all text, wide; B = tagline and small text only, tight.
 uniform sampler2D uBlur;
 uniform vec2 uBlurSize;
-uniform vec4 uTextRect;   // x, y, width, height in device px, origin top-left
+uniform vec4 uBlurRect;
 uniform float uTextOn;
 uniform float uTextMode;  // 0 split, 1 island, 2 hybrid (name splits, the rest is an island)
 uniform vec3 cInkLand, cInkWater;  // split ink over dry land / over water
@@ -103,12 +104,13 @@ void main() {
 
 	// A soft zone around the text where the map calms down so letters stay
 	// readable: 0 away from text, 1 right around it.
-	vec2 tp = (vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y) - uTextRect.xy) / uTextRect.zw;
-	bool inText = uTextOn > 0.5 && tp.x >= 0.0 && tp.x <= 1.0 && tp.y >= 0.0 && tp.y <= 1.0;
+	vec2 px = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
+	vec2 bp = (px - uBlurRect.xy) / uBlurRect.zw;
+	bool inText = uTextOn > 0.5 && bp == clamp(bp, 0.0, 1.0);
 	float calm = 0.0;
 	vec4 blur = vec4(0.0);
 	if (inText) {
-		blur = bicubic(uBlur, uBlurSize, tp);
+		blur = bicubic(uBlur, uBlurSize, bp);
 		calm = smoothstep(0.01, 0.10, blur.r);
 	}
 	float lively = 1.0 - calm;
@@ -136,17 +138,17 @@ void main() {
 	float ground = h;
 	float island = 0.0;
 	if (inText && uTextMode > 0.5) {
-		bool all = uTextMode < 1.5;                     // island mode lifts the name too
+		bool whole = uTextMode < 1.5;                   // island mode lifts the name too
 		// A broad shape that reaches further over ground that is already high
 		// and pulls back where a valley runs in, so its shore follows the
 		// map's own inlets instead of tracing the text block.
 		// The floor keeps a margin of land around the words in the deepest valleys.
 		float reach = max(0.55, 1.0 + 2.6 * (h - toL(0.5)) + 1.1 * (fbm(f * 7.0) - 0.5));
-		float shore = all ? smoothstep(0.015, 0.10, blur.g * reach) : 0.0;
+		float shore = whole ? smoothstep(0.015, 0.10, blur.g * reach) : 0.0;
 		// ...and a core that is always full around every glyph, however thin,
 		// so even small text is never left over water. Hybrid keeps only the
 		// core: broad islands there would cut through the name.
-		float core = smoothstep(0.012, 0.06, all ? blur.r : blur.b);
+		float core = smoothstep(0.012, 0.06, whole ? blur.r : blur.b);
 		island = 1.0 - (1.0 - shore) * (1.0 - core);     // smooth union: no crease
 	}
 	// Lift the existing ground, so the island keeps the map's own hills. The
@@ -224,7 +226,8 @@ void main() {
 	// test doesn't work in dark mode, where land and water are both dark: it
 	// would only flip on the keyline.
 	if (inText) {
-		vec4 m = texture(uText, tp);
+		vec2 tp = (px - uTextRect.xy) / uTextRect.zw;
+		vec4 m = tp == clamp(tp, 0.0, 1.0) ? texture(uText, tp) : vec4(0.0);
 		vec3 split = mix(cInkLand, cInkWater, water);
 		bool nameOnIsland = uTextMode > 0.5 && uTextMode < 1.5;
 		bool restOnIsland = uTextMode > 0.5;
