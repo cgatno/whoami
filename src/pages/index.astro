@@ -1,17 +1,28 @@
 ---
-
+import Base from "../layouts/Base.astro";
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Base title="Christian Gaetano">
+	<main class="flow">
+		<h1>Christian Gaetano</h1>
+		<p class="ui">Recursive at MONO 0 — interface chrome</p>
+		<p>Newsreader carries body copy, with <em>a true italic</em> for emphasis.</p>
+		<h2>Familjen Grotesk sets the headings</h2>
+		<pre><code>// Recursive at MONO 1 — code
+const fonts = ["Familjen Grotesk", "Newsreader", "Recursive"];</code></pre>
+	</main>
+</Base>
+
+<style>
+	main {
+		max-width: var(--measure);
+		margin-inline: auto;
+		padding: var(--space-7) var(--space-3);
+	}
+
+	.ui {
+		font-family: var(--font-ui);
+		font-variation-settings: var(--axes-ui);
+		font-size: var(--text-meta);
+	}
+</style>
