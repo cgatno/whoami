@@ -1,0 +1,102 @@
+/*
+ * Reset — adapted from Andy Bell's "A (more) modern CSS reset" (2023).
+ * The lowest layer, so everything else overrides it.
+ *
+ * Default margins are removed rather than tuned: spacing between elements is
+ * owned by layout (.prose, .flow, or a component), not by element defaults.
+ */
+@layer reset {
+	*,
+	*::before,
+	*::after {
+		box-sizing: border-box;
+	}
+
+	html {
+		-moz-text-size-adjust: none;
+		-webkit-text-size-adjust: none;
+		text-size-adjust: none;
+	}
+
+	body,
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6,
+	p,
+	figure,
+	blockquote,
+	dl,
+	dd,
+	pre {
+		margin: 0;
+	}
+
+	body {
+		min-height: 100vh;
+	}
+
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6,
+	p {
+		overflow-wrap: break-word;
+	}
+
+	/* Only lists that opt in via role="list": Safari drops list semantics
+	   from VoiceOver when list-style is removed. */
+	ul[role="list"],
+	ol[role="list"] {
+		list-style: none;
+	}
+
+	img,
+	picture,
+	video,
+	canvas {
+		display: block;
+		max-width: 100%;
+	}
+
+	img,
+	video {
+		height: auto;
+	}
+
+	input,
+	button,
+	textarea,
+	select {
+		font: inherit;
+	}
+
+	textarea:not([rows]) {
+		min-height: 10em;
+	}
+
+	:target {
+		scroll-margin-block: 5ex;
+	}
+
+	/*
+	 * !important inside the LOWEST layer is the strongest declaration in the
+	 * cascade: layered !important beats unlayered !important, and earlier
+	 * layers win among importants. So no component can re-enable motion for
+	 * someone who asked for less of it.
+	 */
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+			scroll-behavior: auto !important;
+		}
+	}
+}

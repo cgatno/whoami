@@ -1,0 +1,105 @@
+/*
+ * Design tokens: type, spacing, measure, font roles, and the theme switch.
+ * Colour tokens live in palette.css (generated); syntax colours in syntax.css.
+ *
+ * Type steps are named by ROLE, not by size, so adding a new element means
+ * assigning it a role rather than inventing a number.
+ *
+ * Each step is tied to one face, and the px values already carry that face's
+ * optical correction. The three families have very different x-heights
+ * (Familjen 0.500, Newsreader 0.426, Recursive 0.532), so equal px does NOT
+ * mean equal apparent size: Newsreader needs ~+17.5% and Recursive ~-6% to
+ * match Familjen. Do not "tidy" these into a uniform ratio — the ladder is
+ * monotonic in x-height, which is what the eye reads, not in px.
+ */
+
+@layer tokens {
+	:root {
+		/* ---- Type scale ------------------------------------------------------
+		 * step            px    face                 apparent x-height
+		 */
+		--text-micro: 0.75rem; /* 12   Recursive MONO 1    6.38px  eyebrows, labels */
+		--text-meta: 0.875rem; /* 14   Recursive MONO 0    7.45px  metadata, chrome */
+		--text-small: 1rem; /*     16   Newsreader          6.82px  captions, notes  */
+		--text-body: 1.25rem; /*  20   Newsreader          8.52px  running text     */
+		--text-sub: 1.375rem; /*  22   Familjen           11.00px  sub-heading      */
+		--text-lead: 1.5rem; /*   24   Newsreader         10.22px  standfirst       */
+		--text-section: 1.75rem; /* 28  Familjen           14.00px  section heading */
+		--text-title: 2.5rem; /*  40   Familjen           20.00px  page/post title  */
+		--text-display: 4.5rem; /* 72   Familjen           36.00px  landing hero    */
+
+		/* ---- Line heights ----
+		 * Unitless so they inherit correctly. Body is the anchor: 20px x 1.6 = 32px,
+		 * which is what sets the spacing base unit below.
+		 */
+		--leading-display: 1;
+		--leading-title: 1.1;
+		--leading-heading: 1.25;
+		--leading-lead: 1.45;
+		--leading-body: 1.6;
+
+		/* ---- Spacing ---------------------------------------------------------
+		 * Base unit is 8px, derived from the 32px body line box (4 x 8), so
+		 * vertical rhythm and the spacing scale share one foundation.
+		 * Fine gradations at the bottom for prose, coarse jumps at the top for
+		 * landing-page sections.
+		 */
+		--space-1: 0.25rem; /*   4px  - 0.5u */
+		--space-2: 0.5rem; /*    8px  - 1u   */
+		--space-3: 1rem; /*     16px  - 2u   */
+		--space-4: 1.5rem; /*   24px  - 3u   */
+		--space-5: 2rem; /*     32px  - 4u, one body line */
+		--space-6: 3rem; /*     48px  - 6u   */
+		--space-7: 4rem; /*     64px  - 8u, two body lines */
+		--space-8: 6rem; /*     96px  - 12u  */
+		--space-9: 8rem; /*    128px  - 16u  */
+
+		/* ---- Measure ----
+		 * 35rem at 20px Newsreader is ~66 characters, measured from the font's
+		 * real average advance (0.4214 em) rather than the `ch` approximation.
+		 */
+		--measure: 35rem;
+		--measure-narrow: 28rem;
+	}
+
+	/* ---- Theme -------------------------------------------------------------
+	 * palette.css declares every colour as light-dark(). color-scheme decides
+	 * which side applies: the OS preference by default, or a forced choice via
+	 * [data-theme] on <html>.
+	 *
+	 * Theme is PAGE-LEVEL only. Vite's default target predates light-dark(),
+	 * so the build (Lightning CSS) lowers it to a fallback that resolves the
+	 * tokens once, at :root. Forcing color-scheme on a subtree will not
+	 * re-theme them. Raising the build target removes the lowering.
+	 */
+	:root {
+		color-scheme: light dark;
+	}
+
+	:root[data-theme="light"] {
+		color-scheme: light;
+	}
+
+	:root[data-theme="dark"] {
+		color-scheme: dark;
+	}
+
+	/* ---- Font roles ----------------------------------------------------------
+	 * Components reference roles, never families. The --font-* family
+	 * variables (with metric-matched fallbacks) come from Astro's <Font />.
+	 *
+	 * Recursive serves two roles from one file via its MONO axis. Pair
+	 * --font-ui with --axes-ui and --font-code with --axes-code: MONO must be
+	 * set explicitly because font-variation-settings inherits.
+	 */
+	:root {
+		--font-heading: var(--font-familjen-grotesk);
+		--font-body: var(--font-newsreader);
+		--font-ui: var(--font-recursive);
+		--font-code: var(--font-recursive);
+		--axes-ui: "MONO" 0;
+		--axes-code: "MONO" 1;
+
+		--radius: 2px;
+	}
+}

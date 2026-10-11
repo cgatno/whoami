@@ -1,0 +1,22 @@
+/*
+ * Utilities — single-purpose classes. The highest layer, but still below
+ * unlayered Astro component styles: a utility on an element a component
+ * styles the same property for will lose to the component.
+ */
+@layer utilities {
+	/* Vertical rhythm for any stack of siblings. Override per-instance with
+	   --flow-space. */
+	.flow > * + * {
+		margin-block-start: var(--flow-space, var(--space-4));
+	}
+
+	/* Hidden visually, still announced by screen readers. */
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+}

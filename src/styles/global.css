@@ -1,0 +1,21 @@
+/*
+ * Global stylesheet — the single CSS entry point, imported once by
+ * src/layouts/Base.astro.
+ *
+ * All global CSS lives in cascade layers, ordered lowest to highest below.
+ * Each partial wraps itself in its layer, so the order holds however the
+ * bundler inlines these imports.
+ *
+ * Astro component <style> blocks are unlayered, so they beat every layer
+ * regardless of specificity: globals are defaults, components are the last
+ * word. (The one exception is reduced-motion in `reset` — see reset.css.)
+ */
+@layer reset, tokens, base, components, utilities;
+
+@import "./reset.css";
+@import "./tokens.css";
+@import "./palette.css";
+@import "./syntax.css";
+@import "./base.css";
+@import "./prose.css";
+@import "./utilities.css";

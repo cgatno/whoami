@@ -1,0 +1,117 @@
+/*
+ * Base — element defaults. Bare element selectors only, so anything more
+ * specific (or any later layer, or any component) can override them.
+ */
+@layer base {
+	body {
+		background: var(--ground);
+		color: var(--ink);
+		font-family: var(--font-body);
+		font-size: var(--text-body);
+		line-height: var(--leading-body);
+		accent-color: var(--accent);
+	}
+
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		line-height: var(--leading-heading);
+		text-wrap: balance;
+	}
+
+	h1 {
+		font-size: var(--text-title);
+		font-weight: 700;
+		line-height: var(--leading-title);
+	}
+
+	h2 {
+		font-size: var(--text-section);
+	}
+
+	h3 {
+		font-size: var(--text-sub);
+	}
+
+	h4,
+	h5,
+	h6 {
+		font-size: var(--text-body);
+	}
+
+	p,
+	li,
+	dd,
+	figcaption,
+	blockquote {
+		text-wrap: pretty;
+	}
+
+	a {
+		color: var(--accent);
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.18em;
+		text-decoration-skip-ink: auto;
+	}
+
+	a:hover {
+		text-decoration-thickness: 2px;
+	}
+
+	:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
+	}
+
+	::selection {
+		background: color-mix(in oklab, var(--accent) 22%, var(--ground));
+		color: var(--ink);
+	}
+
+	code,
+	kbd,
+	samp,
+	pre {
+		font-family: var(--font-code);
+		font-variation-settings: var(--axes-code);
+	}
+
+	:not(pre) > code {
+		font-size: 0.85em;
+		font-weight: 500;
+		background: var(--raise);
+		padding: 0.1em 0.3em;
+		border-radius: var(--radius);
+	}
+
+	/* Shiki's <pre> sets its own background inline from --astro-code-background,
+	   which syntax.css maps to --raise, so highlighted and plain blocks match. */
+	pre {
+		font-size: var(--text-small);
+		line-height: 1.6;
+		background: var(--raise);
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		padding: var(--space-3);
+		overflow-x: auto;
+		tab-size: 2;
+	}
+
+	hr {
+		border: 0;
+		border-block-start: 1px solid var(--rule);
+	}
+
+	small {
+		font-size: var(--text-small);
+	}
+
+	table {
+		border-collapse: collapse;
+	}
+}

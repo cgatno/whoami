@@ -20,7 +20,16 @@ export default defineConfig({
   // `workers_dev: false` in wrangler.jsonc.
   site: "https://whoami.cgatno.workers.dev",
   adapter: cloudflare(),
+  // All CSS is ~2 KB gzipped, so inlining keeps first paint to one round trip
+  // (homepage: 2.9 KB gz total) at the cost of not caching it across pages.
+  // Revisit if the CSS grows well past that.
+  build: { inlineStylesheets: "always" },
   integrations: [sitemap()],
+  // Colours come from src/styles/syntax.css, mapped onto palette roles.
+  // <Code /> doesn't inherit this, so pass theme="css-variables" there too.
+  markdown: {
+    shikiConfig: { theme: "css-variables" },
+  },
   // Familjen Grotesk (headings), Newsreader (body), Recursive (code + UI).
   // Sizes are measured latin woff2. Google serves one file per axis
   // combination: narrowing a range never shrinks it — only dropping an axis,
