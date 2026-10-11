@@ -51,6 +51,11 @@ uniform sampler2D uBlur;
 uniform vec2 uBlurSize;
 uniform vec4 uBlurRect;
 uniform float uTextOn;
+// 0 at the moment the canvas takes over the text from the page, easing to 1.
+// The text starts in the page's own colors and the map is still busy around
+// it, so the handoff is not a jump.
+uniform float uTextIn;
+uniform vec3 cInk, cDim;           // the page's colors for the name and tagline / small text
 uniform vec3 cInkLand, cInkWater;  // ink over dry land / over water
 
 float luminance(vec3 c) { return dot(pow(c, vec3(2.2)), vec3(0.2126, 0.7152, 0.0722)); }
@@ -101,7 +106,7 @@ void main() {
 	vec2 px = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
 	vec2 bp = (px - uBlurRect.xy) / uBlurRect.zw;
 	bool inText = uTextOn > 0.5 && bp == clamp(bp, 0.0, 1.0);
-	float calm = inText ? smoothstep(0.01, 0.10, bicubic(uBlur, uBlurSize, bp).r) : 0.0;
+	float calm = inText ? uTextIn * smoothstep(0.01, 0.10, bicubic(uBlur, uBlurSize, bp).r) : 0.0;
 	float lively = 1.0 - calm;
 
 	// Aliveness, all of it slow and none of it near the text: the whole map
@@ -183,8 +188,8 @@ void main() {
 	if (inText) {
 		vec2 tp = (px - uTextRect.xy) / uTextRect.zw;
 		vec4 m = tp == clamp(tp, 0.0, 1.0) ? texture(uText, tp) : vec4(0.0);
-		col = mix(col, mix(cInkLand, cInkWater, water), m.r);
-		col = mix(col, bestInk(under, vec3(0.0), vec3(1.0)), m.g);
+		col = mix(col, mix(cInk, mix(cInkLand, cInkWater, water), uTextIn), m.r);
+		col = mix(col, mix(cDim, bestInk(under, vec3(0.0), vec3(1.0)), uTextIn), m.g);
 	}
 
 	outColor = vec4(col, 1.0);

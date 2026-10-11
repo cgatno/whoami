@@ -43,9 +43,15 @@ import Base from "../../layouts/Base.astro";
 		display: block;
 	}
 
-	/* An undrawn canvas is black. Keep it out of sight until the first frame. */
-	#hero:not(.ready) {
-		visibility: hidden;
+	/* An undrawn canvas is black. Keep it transparent until the first frame,
+	   then fade the map in. The duration matches FADE_MS in the script. */
+	#hero {
+		opacity: 0;
+		transition: opacity 400ms ease-out;
+	}
+
+	#hero.ready {
+		opacity: 1;
 	}
 
 	.stage {

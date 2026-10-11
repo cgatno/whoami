@@ -17,6 +17,16 @@ import { buildValleys, generateHeight, SEGMENT_FLOATS, SHAPE } from "./topo";
 type Mode = "live" | "scrub" | "lapse";
 
 const scriptStart = performance.now();
+// Let the page paint its text before any of this runs. A hidden tab has
+// nothing to paint, so it does not wait. The timeout is for a frame that
+// never comes.
+if (!document.hidden) {
+	await new Promise((resolve) => {
+		requestAnimationFrame(() => setTimeout(resolve));
+		setTimeout(resolve, 100);
+	});
+}
+const began = performance.now();
 
 const canvas = document.querySelector<HTMLCanvasElement>("#hero")!;
 const readout = document.querySelector<HTMLElement>("#tide-readout")!;
@@ -57,6 +67,9 @@ const palettes: Record<"light" | "dark", Record<string, RGB>> = {
 		// Both are light, so both read on dark. The split shows as a color change.
 		cInkLand: oklch(0.82, 0.17, 172),
 		cInkWater: hex("#e0edec"),
+		// The page's --ink and --dim, which the text starts in at the handoff.
+		cInk: hex("#e0edec"),
+		cDim: hex("#a4bdbc"),
 	},
 	// Light: dark water on pale marsh, like the Nisqually delta.
 	light: {
@@ -67,6 +80,8 @@ const palettes: Record<"light" | "dark", Record<string, RGB>> = {
 		cPop: oklch(0.6, 0.28, 340),
 		cInkLand: hex("#142726"),
 		cInkWater: hex("#f3fbfb"),
+		cInk: hex("#142726"),
+		cDim: hex("#51706e"),
 	},
 };
 
@@ -618,6 +633,10 @@ function resize() {
 }
 
 const start = performance.now();
+const FADE_MS = 400; // the map's fade-in. Keep in step with the transition on #hero.
+const HANDOFF_MS = 600; // how long the text takes to settle into its split colors
+let shownAt = Infinity; // when the first frame went up
+let textSince = 0; // when the canvas took over the text, or 0 while the page has it
 let firstFrame = "";
 let frames = 0;
 let lastStat = start;
@@ -634,9 +653,14 @@ function draw(now: number) {
 	const tide = currentTide();
 
 	// The canvas takes over the text once the fonts and the text shader are
-	// ready. Until then the ordinary DOM text shows.
-	const textOn = fontsReady && !!blurSource && canvasText;
+	// ready and the map has finished fading in. Until then the ordinary DOM
+	// text shows. Nothing eases with reduced motion or in a hidden tab.
+	const still = reduceMotion.matches || document.hidden;
+	const textOn = fontsReady && !!blurSource && canvasText && now >= shownAt + (still ? 0 : FADE_MS);
 	stage.classList.toggle("on-canvas", textOn);
+	if (!textOn) textSince = 0;
+	else if (!textSince) textSince = now;
+	const settle = !textOn ? 0 : still ? 1 : Math.min(1, (now - textSince) / HANDOFF_MS);
 	if (readout.textContent !== tide.label) {
 		readout.textContent = tide.label;
 		readoutDirty = true;
@@ -663,17 +687,23 @@ function draw(now: number) {
 	gl!.uniform1i(uniforms.uBlur, BLUR);
 	gl!.uniform2f(uniforms.uBlurSize, blurSize[0], blurSize[1]);
 	gl!.uniform1f(uniforms.uTextOn, textOn ? 1 : 0);
+	gl!.uniform1f(uniforms.uTextIn, settle * settle * (3 - 2 * settle));
 	const [sx, sy] = scrollOffset(deviceScale());
 	gl!.uniform4f(uniforms.uTextRect, maskRect.x - sx, maskRect.y - sy, maskRect.w, maskRect.h);
 	gl!.uniform4f(uniforms.uBlurRect, blurRect.x - sx, blurRect.y - sy, blurRect.w, blurRect.h);
 	for (const [name, c] of Object.entries(colors)) gl!.uniform3f(uniforms[name], c[0], c[1], c[2]);
 	gl!.drawArrays(gl!.TRIANGLES, 0, 3);
 	if (!firstFrame) {
-		// The canvas stays hidden until it has something to show.
+		// The canvas is transparent until it has something to show, then
+		// fades in. Draw again once the fade is over, for the text handoff.
+		// A hidden tab would only start fading when it is shown, with the
+		// text already handed over, so it skips the fade.
+		if (document.hidden) canvas.style.transition = "none";
 		canvas.classList.add("ready");
-		const now = performance.now();
-		const busy = yielded - scriptStart + (now - resumed);
-		firstFrame = `first frame ${(now - scriptStart).toFixed(0)} ms after the script started, main thread busy for ${busy.toFixed(0)} ms of it`;
+		shownAt = now;
+		setTimeout(wake, FADE_MS + 20);
+		const busy = yielded - began + (performance.now() - resumed);
+		firstFrame = `first frame ${(performance.now() - scriptStart).toFixed(0)} ms after the script started, main thread busy for ${busy.toFixed(0)} ms of it`;
 		console.log(`${firstFrame} · ${baked}`);
 	}
 	frames++;
