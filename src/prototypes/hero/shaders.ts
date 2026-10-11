@@ -38,29 +38,20 @@ float vnoise(vec2 p) {
 	return mix(mix(hash21(i), hash21(i + vec2(1, 0)), u.x),
 	           mix(hash21(i + vec2(0, 1)), hash21(i + vec2(1, 1)), u.x), u.y);
 }
-float fbm(vec2 p) {
-	float a = 0.5, s = 0.0;
-	for (int i = 0; i < 5; i++) { s += a * vnoise(p); p = p * 2.03 + vec2(17.1, 9.2); a *= 0.5; }
-	return s;
-}
-
 uniform sampler2D uHeight;   // R = the ground, G = a smoothed copy of it
 uniform vec2 uHeightSize;
 uniform float uNext;   // level of the next high or low, 0..1
 
 // The page's text, rasterized into a mask that fits it closely: R = the
-// name, B = the tagline, G = small text.
+// name and tagline, G = small text.
 uniform sampler2D uText;
 uniform vec4 uTextRect;   // x, y, width, height in device px, origin top-left
-// Smooth blurs of that mask over a wider rectangle: R = all text, tight;
-// G = all text, wide; B = tagline and small text only, tight.
+// A smooth blur of that mask over a slightly wider rectangle.
 uniform sampler2D uBlur;
 uniform vec2 uBlurSize;
 uniform vec4 uBlurRect;
 uniform float uTextOn;
-uniform float uTextMode;  // 0 split, 1 island, 2 hybrid (name splits, the rest is an island)
-uniform vec3 cInkLand, cInkWater;  // split ink over dry land / over water
-uniform vec3 cInk;                 // the palette's ordinary text ink
+uniform vec3 cInkLand, cInkWater;  // ink over dry land / over water
 
 float luminance(vec3 c) { return dot(pow(c, vec3(2.2)), vec3(0.2126, 0.7152, 0.0722)); }
 float contrast(float a, float b) { return (max(a, b) + 0.05) / (min(a, b) + 0.05); }
@@ -110,12 +101,7 @@ void main() {
 	vec2 px = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
 	vec2 bp = (px - uBlurRect.xy) / uBlurRect.zw;
 	bool inText = uTextOn > 0.5 && bp == clamp(bp, 0.0, 1.0);
-	float calm = 0.0;
-	vec4 blur = vec4(0.0);
-	if (inText) {
-		blur = bicubic(uBlur, uBlurSize, bp);
-		calm = smoothstep(0.01, 0.10, blur.r);
-	}
+	float calm = inText ? smoothstep(0.01, 0.10, bicubic(uBlur, uBlurSize, bp).r) : 0.0;
 	float lively = 1.0 - calm;
 
 	// Aliveness, all of it slow and none of it near the text: the whole map
@@ -126,28 +112,6 @@ void main() {
 	// Near text, use the smoothed copy of the ground, so the waterline crosses
 	// the letters as one clean curve instead of a string of small notches.
 	float h = mix(heights.r, heights.g, calm);
-	// "Island": text can be made high ground. The terrain rises around it, so
-	// the tide laps around the words and never reaches them; they stay in one
-	// ink on dry land.
-	float ground = h;
-	float island = 0.0;
-	if (inText && uTextMode > 0.5) {
-		bool whole = uTextMode < 1.5;                   // island mode lifts the name too
-		// A broad shape that reaches further over ground that is already high
-		// and pulls back where a valley runs in, so its shore follows the
-		// map's own inlets instead of tracing the text block.
-		// The floor keeps a margin of land around the words in the deepest valleys.
-		float reach = max(0.55, 1.0 + 2.6 * (h - toL(0.5)) + 1.1 * (fbm(f * 7.0) - 0.5));
-		float shore = whole ? smoothstep(0.015, 0.10, blur.g * reach) : 0.0;
-		// ...and a core that is always full around every glyph, however thin,
-		// so even small text is never left over water. Hybrid keeps only the
-		// core: broad islands there would cut through the name.
-		float core = smoothstep(0.012, 0.06, whole ? blur.r : blur.b);
-		island = 1.0 - (1.0 - shore) * (1.0 - core);     // smooth union: no crease
-	}
-	// Lift the existing ground, so the island keeps the map's own hills. The
-	// lift exceeds the highest tide, so text is dry whatever is under it.
-	h += (toL(1.0) + 0.05) * island;
 
 	// ...the water's edge laps in and out, out of step from place to place...
 	float lap = lively * 0.0044 * sin(uTime * 0.57 + vnoise(f * 2.5) * 6.283);
@@ -163,9 +127,8 @@ void main() {
 	float toMajor = abs(fract(k / 4.0 - 0.5) - 0.5) * STEP * 4.0;
 	float minor = 1.0 - smoothstep(0.5 * aa, 1.3 * aa, toMinor);
 	float major = 1.0 - smoothstep(0.9 * aa, 1.9 * aa, toMajor);
-	// None near text, nor on an island's slopes, where the lift would pack
-	// the lines into a border.
-	float line = max(0.45 * minor, 0.9 * major) * lively * (1.0 - smoothstep(0.0, 0.2, island));
+	// None near text.
+	float line = max(0.45 * minor, 0.9 * major) * lively;
 
 	// Dry land is the page, with tone-on-tone contours.
 	vec3 land = mix(cGround, cRill, 0.55 * line);
@@ -193,10 +156,8 @@ void main() {
 	// the biggest tides reach, and the low ground only the lowest lows
 	// uncover. Each peaks at the extreme itself and fades beyond it. The one
 	// the tide is heading toward is the stronger.
-	// Measured on the ground as it was before any island lift: lifted slopes
-	// pass through the "extreme high" heights without a tide ever reaching them.
-	float hiZone = smoothstep(toL(0.9), toL(1.0), ground) * (1.0 - smoothstep(toL(1.0), toL(1.0) + 0.012, ground));
-	float loZone = (1.0 - smoothstep(toL(0.0), toL(0.1), ground)) * smoothstep(toL(0.0) - 0.012, toL(0.0), ground);
+	float hiZone = smoothstep(toL(0.9), toL(1.0), h) * (1.0 - smoothstep(toL(1.0), toL(1.0) + 0.012, h));
+	float loZone = (1.0 - smoothstep(toL(0.0), toL(0.1), h)) * smoothstep(toL(0.0) - 0.012, toL(0.0), h);
 	// Stepped into three flat tints like the water bands. A soft blur reads
 	// as a glow, which breaks the flat look.
 	float zone = max(hiZone, loZone) * 3.0;
@@ -207,13 +168,13 @@ void main() {
 	// crossfade either side of it with no jump.
 	float rising = 0.5 + 0.5 * uRate;
 	float toward = hiZone > loZone ? rising : 1.0 - rising;
-	// None on an island or near any text: a magenta band across a word is
-	// one more color for the letters to sit on.
-	float tint = stepped * mix(0.22, 0.46, toward) * (1.0 - island) * lively;
+	// None near text: a magenta band across a word is one more color for
+	// the letters to sit on.
+	float tint = stepped * mix(0.22, 0.46, toward) * lively;
 	col = mix(col, cPop, tint);
 	under = mix(under, cPop, tint);
 
-	// Text. Display text takes one ink over water and another over dry
+	// Text. The name and tagline take one ink over water and another over dry
 	// land, so letters split exactly along the waterline. Each theme's pair
 	// is checked against every flat color it can sit on (worst case 4.65:1
 	// dark, 5.97:1 light). The ink is chosen by region. A per-pixel contrast
@@ -222,19 +183,15 @@ void main() {
 	if (inText) {
 		vec2 tp = (px - uTextRect.xy) / uTextRect.zw;
 		vec4 m = tp == clamp(tp, 0.0, 1.0) ? texture(uText, tp) : vec4(0.0);
-		vec3 split = mix(cInkLand, cInkWater, water);
-		bool nameOnIsland = uTextMode > 0.5 && uTextMode < 1.5;
-		bool restOnIsland = uTextMode > 0.5;
-		col = mix(col, nameOnIsland ? cInk : split, m.r);
-		col = mix(col, restOnIsland ? cInk : split, m.b);
-		col = mix(col, restOnIsland ? cInk : bestInk(under, vec3(0.0), vec3(1.0)), m.g);
+		col = mix(col, mix(cInkLand, cInkWater, water), m.r);
+		col = mix(col, bestInk(under, vec3(0.0), vec3(1.0)), m.g);
 	}
 
 	outColor = vec4(col, 1.0);
 }`;
 
-// Builds the input for the text blurs at reduced resolution: R and G = all
-// text, B = tagline and small text only. The readout goes in as a flat bar.
+// Builds the input for the text blur at reduced resolution. The readout goes
+// in as a flat bar.
 export const FRAG_BLUR_SOURCE = /* glsl */ `#version 300 es
 precision highp float;
 precision highp sampler2D;
@@ -256,9 +213,7 @@ void main() {
 		if (q == clamp(q, vec2(0.0), size)) m += 0.25 * texture(uText, q / size);
 	}
 	float bar = p.x >= uBar.x && p.y >= uBar.y && p.x < uBar.z && p.y < uBar.w ? uBarValue : 0.0;
-	float rest = max(m.b, bar);
-	float whole = max(m.r, rest);
-	outColor = vec4(whole, whole, rest, 1.0);
+	outColor = vec4(max(m.r, bar));
 }`;
 
 // One direction of a Gaussian blur. Run it twice, across and then down.

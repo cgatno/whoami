@@ -24,12 +24,7 @@ import Base from "../../layouts/Base.astro";
 			<button type="button" data-mode="scrub">Scrub</button>
 			<input id="tide-scrub" type="range" min="0" max="1" step="0.001" aria-label="Tide level" />
 		</div>
-		<div class="group" role="group" aria-label="Text treatment">
-			<label><input id="hero-canvas-text" type="checkbox" checked /> Canvas text</label>
-			<button type="button" data-text="split">Split</button>
-			<button type="button" data-text="island">Island</button>
-			<button type="button" data-text="hybrid">Hybrid</button>
-		</div>
+		<label><input id="hero-canvas-text" type="checkbox" checked /> Canvas text</label>
 		<button type="button" id="hero-theme">Theme</button>
 		<span id="hero-stats"></span>
 	</div>

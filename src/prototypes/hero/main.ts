@@ -1,5 +1,5 @@
 // Prototype harness: one full-viewport WebGL2 canvas and controls for the
-// tide and the text treatment.
+// tide.
 import { makeColors, type RGB } from "./color";
 import {
 	FRAG,
@@ -55,7 +55,6 @@ const palettes: Record<"light" | "dark", Record<string, RGB>> = {
 		// Both are light, so both read on dark. The split shows as a color change.
 		cInkLand: oklch(0.82, 0.17, 172),
 		cInkWater: hex("#e0edec"),
-		cInk: hex("#e0edec"),
 	},
 	// Light: dark water on pale marsh, like the Nisqually delta.
 	light: {
@@ -66,7 +65,6 @@ const palettes: Record<"light" | "dark", Record<string, RGB>> = {
 		cPop: oklch(0.6, 0.28, 340),
 		cInkLand: hex("#142726"),
 		cInkWater: hex("#f3fbfb"),
-		cInk: hex("#142726"),
 	},
 };
 
@@ -349,8 +347,8 @@ let baked = `map shaders ${mapShadersMs.toFixed(0)} ms · ${valleys.count.toLoca
 // word is rasterized at the exact position the browser laid it out.
 //
 // Two textures. The mask holds the glyphs and fits them closely. The blur
-// covers a wider rectangle and gives the shader the "zone around the text"
-// and the island's shape. Only a change in layout rebuilds them. Scrolling
+// covers a slightly wider rectangle and gives the shader the zone around
+// the text where the map calms down. Only a change in layout rebuilds them. Scrolling
 // moves both rectangles, and a new tide readout redraws one strip of the
 // mask.
 const stage = document.querySelector<HTMLElement>(".stage")!;
@@ -370,10 +368,10 @@ const blurTexture = createTarget(BLUR);
 const blurInput = createTarget();
 const blurScratch = createTarget();
 
-// One mask channel per tier: red = the name, blue = the tagline, green = small.
-const TIER_COLOR: Record<string, string> = { display: "#f00", lead: "#00f", small: "#0f0" };
+// Mask channels: red for the name and tagline, green for small text.
+const TIER_COLOR: Record<string, string> = { display: "#f00", lead: "#f00", small: "#0f0" };
 const MARGIN = 4; // CSS px kept clear around the glyphs in the mask
-const PAD = 220; // CSS px around the mask for the blurred zone and island slopes
+const PAD = 48; // CSS px around the mask for the blur to fade out in
 const SLOT = 64; // CSS px. The readout's reserved width changes in these steps.
 const BLUR_DOWNSCALE = 4; // the blurs are smooth, so they don't need full resolution
 const BAR = 0.3; // the readout's weight in the blur, about the ink of small text
@@ -483,7 +481,7 @@ function layoutText() {
 	strip.width = mask.width;
 	strip.height = Math.ceil(line.bottom * scale) - Math.floor(line.top * scale);
 
-	// Blurs. The readout goes in as a flat bar the width of its slot, so the
+	// Blur. The readout goes in as a flat bar the width of its slot, so the
 	// blur does not depend on what the readout says.
 	const D = BLUR_DOWNSCALE;
 	const pad = Math.round((PAD * scale) / D);
@@ -507,10 +505,8 @@ function layoutText() {
 		);
 		gl!.uniform1f(u.uBarValue, BAR);
 	});
-	// Radii are in CSS px. Sigma is in the blur texture's texels.
-	const sigma = (cssPx: number) => (cssPx * scale) / D + 0.5;
-	gaussian(blurInput, blurScratch, blurTexture, size, sigma(12), [true, false, true, false]);
-	gaussian(blurInput, blurScratch, blurTexture, size, sigma(62), [false, true, false, false]);
+	// 12 CSS px, in the blur texture's texels.
+	gaussian(blurInput, blurScratch, blurTexture, size, (12 * scale) / D + 0.5, [true, true, true, true]);
 	blurRect = { x: maskRect.x - pad * D, y: maskRect.y - pad * D, w: size[0] * D, h: size[1] * D };
 	layoutDirty = readoutDirty = false;
 }
@@ -540,10 +536,8 @@ new ResizeObserver(() => ((layoutDirty = true), wake())).observe(stage);
 let mode: Mode = params.has("tide") ? "scrub" : "live";
 let scrub = Number(params.get("tide") ?? 0.5);
 let lapseStart = performance.now();
-const TEXT_MODES = ["split", "island", "hybrid"] as const;
 // Off: the canvas leaves the text to the DOM and skips all text work.
 let canvasText = !params.has("domtext");
-let textMode = Math.max(0, TEXT_MODES.indexOf((params.get("text") ?? "split") as (typeof TEXT_MODES)[number]));
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const darkQuery = matchMedia("(prefers-color-scheme: dark)");
 const isDark = () => (root.dataset.theme ? root.dataset.theme === "dark" : darkQuery.matches);
@@ -620,7 +614,6 @@ function draw(now: number) {
 	gl!.uniform1i(uniforms.uBlur, BLUR);
 	gl!.uniform2f(uniforms.uBlurSize, blurSize[0], blurSize[1]);
 	gl!.uniform1f(uniforms.uTextOn, textOn ? 1 : 0);
-	gl!.uniform1f(uniforms.uTextMode, textMode);
 	const [sx, sy] = scrollOffset(deviceScale());
 	gl!.uniform4f(uniforms.uTextRect, maskRect.x - sx, maskRect.y - sy, maskRect.w, maskRect.h);
 	gl!.uniform4f(uniforms.uBlurRect, blurRect.x - sx, blurRect.y - sy, blurRect.w, blurRect.h);
@@ -667,9 +660,6 @@ function sync() {
 	document.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach((b) =>
 		b.setAttribute("aria-pressed", String(b.dataset.mode === mode)),
 	);
-	document.querySelectorAll<HTMLButtonElement>("[data-text]").forEach((b) =>
-		b.setAttribute("aria-pressed", String(b.dataset.text === TEXT_MODES[textMode])),
-	);
 	const slider = document.querySelector<HTMLInputElement>("#tide-scrub")!;
 	slider.disabled = mode !== "scrub";
 	slider.value = String(scrub);
@@ -679,12 +669,6 @@ document.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach((b) =>
 	b.addEventListener("click", () => {
 		mode = b.dataset.mode as Mode;
 		if (mode === "lapse") lapseStart = performance.now();
-		sync();
-	}),
-);
-document.querySelectorAll<HTMLButtonElement>("[data-text]").forEach((b) =>
-	b.addEventListener("click", () => {
-		textMode = TEXT_MODES.indexOf(b.dataset.text as (typeof TEXT_MODES)[number]);
 		sync();
 	}),
 );
