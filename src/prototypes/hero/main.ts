@@ -94,14 +94,14 @@ const floatTargets = !!(gl.getExtension("EXT_color_buffer_float") || gl.getExten
 const fbo = gl.createFramebuffer();
 type Uniforms = Record<string, WebGLUniformLocation | null>;
 
-function createTarget(unit = SCRATCH) {
+function createTarget(unit = SCRATCH, wrap: number = gl!.CLAMP_TO_EDGE) {
 	const texture = gl!.createTexture();
 	gl!.activeTexture(gl!.TEXTURE0 + unit);
 	gl!.bindTexture(gl!.TEXTURE_2D, texture);
 	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, gl!.LINEAR);
 	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MAG_FILTER, gl!.LINEAR);
-	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_S, gl!.CLAMP_TO_EDGE);
-	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_T, gl!.CLAMP_TO_EDGE);
+	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_S, wrap);
+	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_T, wrap);
 	return texture;
 }
 
@@ -157,15 +157,26 @@ function gaussian(
 }
 
 // ---- terrain, baked once at load
+// The texture holds the ground twice: R as baked, and G blurred. Near text
+// the map shader reads the blurred copy so the waterline stays smooth.
 const seed = Number(params.get("seed") ?? 11);
 const height = generateHeight(seed);
-gl.activeTexture(gl.TEXTURE0 + HEIGHT);
-gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
-gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16F, height.width, height.height, 0, gl.RED, gl.FLOAT, height.data);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+const heightSize = [height.width, height.height];
+const SMOOTH_SIGMA = 13.4; // texels
+{
+	const both = new Float32Array(height.data.length * 2);
+	for (let i = 0; i < height.data.length; i++) both[i * 2] = both[i * 2 + 1] = height.data[i];
+	const texture = createTarget(HEIGHT, gl.MIRRORED_REPEAT);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG16F, heightSize[0], heightSize[1], 0, gl.RG, gl.FLOAT, both);
+	// Without float targets G stays a plain copy, and the waterline near
+	// text is a little rougher.
+	if (floatTargets) {
+		const scratch = createTarget(SCRATCH, gl.MIRRORED_REPEAT);
+		resizeTarget(scratch, heightSize);
+		gaussian(texture, scratch, texture, heightSize, SMOOTH_SIGMA, [false, true, false, false]);
+		gl.deleteTexture(scratch);
+	}
+}
 const baked = `terrain from ${height.valleys.toLocaleString()} valley segments in ${Math.round(height.ms)} ms`;
 
 // ---- text drawn in the shader
@@ -440,7 +451,7 @@ function draw(now: number) {
 	gl!.uniform1f(uniforms.uNext, tide.next);
 	gl!.uniform1f(uniforms.uFieldAspect, 1.6);
 	gl!.uniform1i(uniforms.uHeight, HEIGHT);
-	gl!.uniform2f(uniforms.uHeightSize, height.width, height.height);
+	gl!.uniform2f(uniforms.uHeightSize, heightSize[0], heightSize[1]);
 	gl!.uniform1i(uniforms.uText, TEXT);
 	gl!.uniform1i(uniforms.uBlur, BLUR);
 	gl!.uniform2f(uniforms.uBlurSize, blurSize[0], blurSize[1]);

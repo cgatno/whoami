@@ -40,7 +40,7 @@ float fbm(vec2 p) {
 	return s;
 }
 
-uniform sampler2D uHeight;
+uniform sampler2D uHeight;   // R = the ground, G = a smoothed copy of it
 uniform vec2 uHeightSize;
 uniform float uNext;   // level of the next high or low, 0..1
 
@@ -88,7 +88,6 @@ vec4 bicubic(sampler2D tex, vec2 size, vec2 uv) {
 	float sx = sw.x / (sw.x + sw.y), sy = sw.z / (sw.z + sw.w);
 	return mix(mix(d, c2, sx), mix(b, a, sx), sy);
 }
-float heightAt(vec2 uv) { return bicubic(uHeight, uHeightSize, uv).r; }
 
 float toL(float level) { return mix(0.09, 0.40, level); }
 
@@ -119,19 +118,10 @@ void main() {
 	// undulates very slightly...
 	f += lively * 0.0026 * vec2(sin(uTime * 0.19 + f.y * 9.0), cos(uTime * 0.155 + f.x * 8.0));
 	vec2 uv = vec2(f.x / uFieldAspect, f.y);
-	float h = heightAt(uv);
-	// Near text, use a smoothed copy of the ground, so the waterline crosses
+	vec2 heights = bicubic(uHeight, uHeightSize, uv).rg;
+	// Near text, use the smoothed copy of the ground, so the waterline crosses
 	// the letters as one clean curve instead of a string of small notches.
-	if (calm > 0.0) {
-		vec2 r = vec2(0.022 / uFieldAspect, 0.022);
-		vec2 d = 1.5 * r;                                  // a second, wider ring
-		float smooth_ = 0.125 * (
-			heightAt(uv + vec2(r.x, 0.0)) + heightAt(uv - vec2(r.x, 0.0)) +
-			heightAt(uv + vec2(0.0, r.y)) + heightAt(uv - vec2(0.0, r.y)) +
-			heightAt(uv + d) + heightAt(uv - d) +
-			heightAt(uv + vec2(d.x, -d.y)) + heightAt(uv + vec2(-d.x, d.y)));
-		h = mix(h, smooth_, calm);
-	}
+	float h = mix(heights.r, heights.g, calm);
 	// "Island": text can be made high ground. The terrain rises around it, so
 	// the tide laps around the words and never reaches them; they stay in one
 	// ink on dry land.
