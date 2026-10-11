@@ -1,18 +1,11 @@
-// Generates a dendritic tidal-channel network and bakes it into a float
-// texture the shaders sample.
+// Builds a dendritic tidal-channel network.
 //
 // Method: a shortest-path tree grown inland from the sea edge over a noisy
 // cost field. Every cell drains to the neighbor it was reached from, which
 // gives a pit-free drainage tree; counting upstream cells gives each channel
 // its size. This is the same shape real tidal rills make as they converge.
-//
-// Output texture (RGBA float), one texel per (cell / SCALE):
-//   R  distance to the nearest channel centerline, in cells
-//   G  that channel's upstream coordinate, 0 at the sea .. 1 at the far tips
-//   B  that channel's half-width, in cells (0 = no channel nearby)
-//   A  a random id per "stem", so pulses can travel along one channel
 
-/** The drainage tree both bakes are built from. */
+/** The drainage tree the terrain is built from. */
 export interface Tree {
 	GW: number;
 	GH: number;
@@ -23,30 +16,14 @@ export interface Tree {
 	maxCost: number;
 	/** Number of cells draining through each cell. */
 	acc: Float32Array;
-	/** Random id per stem (an unbroken channel from some point to a tip). */
-	stem: Float32Array;
 	/** Jittered cell positions, in cells. */
 	px: Float32Array;
 	py: Float32Array;
 	fbm: (x: number, y: number) => number;
-	lattice: (x: number, y: number) => number;
-}
-
-export interface Field {
-	data: Float32Array;
-	width: number;
-	height: number;
-	/** Field aspect ratio (width / height). */
-	aspect: number;
-	segments: number;
-	ms: number;
 }
 
 const GW = 416;
 const GH = 260;
-const SCALE = 3;
-const MIN_ACC = 9; // upstream cells before a cell counts as a channel
-const REACH = 11; // texels of falloff stored beyond a channel's bank
 
 function mulberry32(seed: number) {
 	let a = seed >>> 0;
@@ -173,30 +150,11 @@ export function buildTree(seed = 11): Tree {
 	}
 	const maxCost = cost[order[N - 1]];
 
-	// ---- upstream area, child lists and stems
+	// ---- upstream area
 	const acc = new Float32Array(N).fill(1);
 	for (let i = N - 1; i >= 0; i--) {
 		const c = order[i];
 		if (parent[c] >= 0) acc[parent[c]] += acc[c];
-	}
-	const firstChild = new Int32Array(N).fill(-1);
-	const nextSibling = new Int32Array(N).fill(-1);
-	for (let c = 0; c < N; c++) {
-		const p = parent[c];
-		if (p >= 0) {
-			nextSibling[c] = firstChild[p];
-			firstChild[p] = c;
-		}
-	}
-	// At each fork the larger branch continues the stem; smaller ones start
-	// their own. A stem is one unbroken channel from some point to a tip.
-	const stem = new Float32Array(N);
-	for (let i = 0; i < N; i++) {
-		const c = order[i];
-		if (parent[c] < 0) stem[c] = rand();
-		let best = -1;
-		for (let k = firstChild[c]; k >= 0; k = nextSibling[k]) if (best < 0 || acc[k] > acc[best]) best = k;
-		for (let k = firstChild[c]; k >= 0; k = nextSibling[k]) stem[k] = k === best ? stem[c] : rand();
 	}
 
 	// Jittered positions hide the grid.
@@ -210,80 +168,5 @@ export function buildTree(seed = 11): Tree {
 		}
 	}
 
-	return { GW, GH, parent, cost, maxCost, acc, stem, px, py, fbm, lattice };
-}
-
-export function generateField(seed = 11): Field {
-	const t0 = performance.now();
-	const { parent, cost, maxCost, acc, stem, px, py } = buildTree(seed);
-	const N = GW * GH;
-
-	// Trunks flare toward the sea, the way estuary mouths funnel open.
-	const half = new Float32Array(N);
-	for (let y = 0; y < GH; y++) {
-		for (let x = 0; x < GW; x++) {
-			const c = y * GW + x;
-			const u = cost[c] / maxCost;
-			const base = Math.min(0.11 + 0.07 * Math.pow(acc[c], 0.46), 2.4);
-			const flare = 1 + 1.4 * Math.max(0, 1 - u * 4) ** 2 * Math.min(1, acc[c] / 400);
-			half[c] = base * flare;
-		}
-	}
-
-	// ---- bake to a texture
-	const TW = GW * SCALE;
-	const TH = GH * SCALE;
-	const data = new Float32Array(TW * TH * 4);
-	const best = new Float32Array(TW * TH).fill(1e9);
-	for (let i = 0; i < TW * TH; i++) {
-		data[i * 4] = 64;
-		data[i * 4 + 1] = 1;
-	}
-
-	let segments = 0;
-	for (let c = 0; c < N; c++) {
-		const p = parent[c];
-		if (p < 0 || acc[c] < MIN_ACC) continue;
-		segments++;
-		const ax = px[c] * SCALE;
-		const ay = py[c] * SCALE;
-		const bx = px[p] * SCALE;
-		const by = py[p] * SCALE;
-		const ha = half[c] * SCALE;
-		const hb = half[p] * SCALE;
-		const ua = cost[c] / maxCost;
-		const ub = cost[p] / maxCost;
-		const dx = bx - ax;
-		const dy = by - ay;
-		const len2 = dx * dx + dy * dy || 1e-6;
-		const r = Math.max(ha, hb) + REACH;
-		const x0 = Math.max(0, Math.floor(Math.min(ax, bx) - r));
-		const x1 = Math.min(TW - 1, Math.ceil(Math.max(ax, bx) + r));
-		const y0 = Math.max(0, Math.floor(Math.min(ay, by) - r));
-		const y1 = Math.min(TH - 1, Math.ceil(Math.max(ay, by) + r));
-		for (let y = y0; y <= y1; y++) {
-			const qy = y + 0.5 - ay;
-			for (let x = x0; x <= x1; x++) {
-				const qx = x + 0.5 - ax;
-				let t = (qx * dx + qy * dy) / len2;
-				t = t < 0 ? 0 : t > 1 ? 1 : t;
-				const ex = qx - t * dx;
-				const ey = qy - t * dy;
-				const d = Math.sqrt(ex * ex + ey * ey);
-				const h = ha + (hb - ha) * t;
-				const signed = d - h;
-				if (signed > REACH) continue;
-				const i = y * TW + x;
-				if (signed < best[i]) {
-					best[i] = signed;
-					data[i * 4] = d / SCALE;
-					data[i * 4 + 1] = ua + (ub - ua) * t;
-					data[i * 4 + 2] = h / SCALE;
-					data[i * 4 + 3] = stem[c];
-				}
-			}
-		}
-	}
-
-	return { data, width: TW, height: TH, aspect: GW / GH, segments, ms: performance.now() - t0 };
+	return { GW, GH, parent, cost, maxCost, acc, px, py, fbm };
 }

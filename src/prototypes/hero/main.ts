@@ -1,19 +1,10 @@
-// Prototype harness: one full-viewport WebGL2 canvas, a shader per variant,
-// and controls for switching between them and scrubbing the tide.
+// Prototype harness: one full-viewport WebGL2 canvas and controls for the
+// tide and the text treatment.
 import { makeColors, type RGB } from "./color";
-import { generateField } from "./network";
-import { FRAG_CHART, FRAG_FILAMENTS, FRAG_FLATS, FRAG_TERRAIN, FRAG_TOPO, VERT } from "./shaders";
+import { FRAG, VERT } from "./shaders";
 import { tideAt } from "./tide";
 import { generateHeight } from "./topo";
 
-const VARIANTS = {
-	flats: FRAG_FLATS,
-	filaments: FRAG_FILAMENTS,
-	terrain: FRAG_TERRAIN,
-	chart: FRAG_CHART,
-	topo: FRAG_TOPO,
-} as const;
-type Variant = keyof typeof VARIANTS;
 type Mode = "live" | "scrub" | "lapse";
 
 const canvas = document.querySelector<HTMLCanvasElement>("#hero")!;
@@ -40,11 +31,9 @@ const palettes: Record<"light" | "dark", Record<string, RGB>> = {
 	// Dark: bright water on dark mud, like the Stillaguamish flats.
 	dark: {
 		cGround: hex("#0b1616"),
-		cFlat: oklch(0.25, 0.025, 185),
 		cRill: oklch(0.33, 0.04, 180),
 		cWater: oklch(0.82, 0.17, 172),
 		cDeep: oklch(0.27, 0.055, 195),
-		cFoam: oklch(0.96, 0.05, 150),
 		cPop: oklch(0.7, 0.3, 338),
 		// Both are light, so both read on dark. The split shows as a color change.
 		cInkLand: oklch(0.82, 0.17, 172),
@@ -54,11 +43,9 @@ const palettes: Record<"light" | "dark", Record<string, RGB>> = {
 	// Light: dark water on pale marsh, like the Nisqually delta.
 	light: {
 		cGround: hex("#f3fbfb"),
-		cFlat: oklch(0.9, 0.025, 170),
 		cRill: oklch(0.7, 0.05, 185),
 		cWater: oklch(0.66, 0.14, 178),
 		cDeep: oklch(0.36, 0.075, 198),
-		cFoam: oklch(0.99, 0.015, 170),
 		cPop: oklch(0.6, 0.28, 340),
 		cInkLand: hex("#142726"),
 		cInkWater: hex("#f3fbfb"),
@@ -66,7 +53,7 @@ const palettes: Record<"light" | "dark", Record<string, RGB>> = {
 	},
 };
 
-// ---- programs
+// ---- program
 function compile(type: number, src: string) {
 	const s = gl!.createShader(type)!;
 	gl!.shaderSource(s, src);
@@ -74,50 +61,39 @@ function compile(type: number, src: string) {
 	if (!gl!.getShaderParameter(s, gl!.COMPILE_STATUS)) throw new Error(gl!.getShaderInfoLog(s) ?? "shader error");
 	return s;
 }
-const vert = compile(gl.VERTEX_SHADER, VERT);
-const programs = {} as Record<Variant, { program: WebGLProgram; uniforms: Record<string, WebGLUniformLocation | null> }>;
-for (const [name, frag] of Object.entries(VARIANTS) as [Variant, string][]) {
-	const program = gl.createProgram()!;
-	gl.attachShader(program, vert);
-	gl.attachShader(program, compile(gl.FRAGMENT_SHADER, frag));
-	gl.linkProgram(program);
-	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program) ?? "link error");
+function link(frag: string) {
+	const program = gl!.createProgram()!;
+	gl!.attachShader(program, compile(gl!.VERTEX_SHADER, VERT));
+	gl!.attachShader(program, compile(gl!.FRAGMENT_SHADER, frag));
+	gl!.linkProgram(program);
+	if (!gl!.getProgramParameter(program, gl!.LINK_STATUS)) throw new Error(gl!.getProgramInfoLog(program) ?? "link error");
 	const uniforms: Record<string, WebGLUniformLocation | null> = {};
-	const count = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS) as number;
+	const count = gl!.getProgramParameter(program, gl!.ACTIVE_UNIFORMS) as number;
 	for (let i = 0; i < count; i++) {
-		const info = gl.getActiveUniform(program, i)!;
-		uniforms[info.name] = gl.getUniformLocation(program, info.name);
+		const info = gl!.getActiveUniform(program, i)!;
+		uniforms[info.name] = gl!.getUniformLocation(program, info.name);
 	}
-	programs[name] = { program, uniforms };
+	return { program, uniforms };
 }
+const map = link(FRAG);
 gl.bindVertexArray(gl.createVertexArray());
 
-// ---- baked textures, built only when a variant that needs them is shown
+// Texture units.
+const HEIGHT = 0;
+const TEXT = 1;
+const BLUR = 2;
+
+// ---- terrain, baked once at load
 const seed = Number(params.get("seed") ?? 11);
-function upload(unit: number, internal: number, format: number, w: number, h: number, data: Float32Array) {
-	gl!.activeTexture(gl!.TEXTURE0 + unit);
-	gl!.bindTexture(gl!.TEXTURE_2D, gl!.createTexture());
-	gl!.texImage2D(gl!.TEXTURE_2D, 0, internal, w, h, 0, format, gl!.FLOAT, data);
-	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, gl!.LINEAR);
-	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MAG_FILTER, gl!.LINEAR);
-	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_S, gl!.MIRRORED_REPEAT);
-	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_T, gl!.MIRRORED_REPEAT);
-}
-let field: ReturnType<typeof generateField> | undefined;
-let height: ReturnType<typeof generateHeight> | undefined;
-let baked = "";
-function ensureBaked() {
-	if ((variant === "flats" || variant === "filaments") && !field) {
-		field = generateField(seed);
-		upload(0, gl!.RGBA16F, gl!.RGBA, field.width, field.height, field.data);
-		baked = `network ${field.segments.toLocaleString()} segments in ${Math.round(field.ms)} ms`;
-	}
-	if (variant === "topo" && !height) {
-		height = generateHeight(seed);
-		upload(1, gl!.R16F, gl!.RED, height.width, height.height, height.data);
-		baked = `terrain from ${height.valleys.toLocaleString()} valley segments in ${Math.round(height.ms)} ms`;
-	}
-}
+const height = generateHeight(seed);
+gl.activeTexture(gl.TEXTURE0 + HEIGHT);
+gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16F, height.width, height.height, 0, gl.RED, gl.FLOAT, height.data);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+const baked = `terrain from ${height.valleys.toLocaleString()} valley segments in ${Math.round(height.ms)} ms`;
 
 // ---- text drawn in the shader
 // The real text stays in the DOM (for screen readers, selection and search)
@@ -127,7 +103,7 @@ const stage = document.querySelector<HTMLElement>(".stage")!;
 const textEls = Array.from(document.querySelectorAll<HTMLElement>("[data-hero-text]"));
 const mask = document.createElement("canvas");
 const maskCtx = mask.getContext("2d")!;
-gl.activeTexture(gl.TEXTURE2);
+gl.activeTexture(gl.TEXTURE0 + TEXT);
 gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -137,7 +113,7 @@ gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 // "zone around the text" and the island's shape. These are real blurs. A low
 // mip level is only a few texels wide at these radii and leaves faceted
 // edges.
-gl.activeTexture(gl.TEXTURE3);
+gl.activeTexture(gl.TEXTURE0 + BLUR);
 gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -224,7 +200,7 @@ function drawTextMask() {
 			}
 		}
 	}
-	gl!.activeTexture(gl!.TEXTURE2);
+	gl!.activeTexture(gl!.TEXTURE0 + TEXT);
 	gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA, gl!.RGBA, gl!.UNSIGNED_BYTE, mask);
 
 	// Blurs, computed at reduced resolution (they are smooth, so nothing is lost).
@@ -254,15 +230,13 @@ function drawTextMask() {
 		packed[i * 4 + 2] = tightRest[i];
 		packed[i * 4 + 3] = 1;
 	}
-	gl!.activeTexture(gl!.TEXTURE3);
+	gl!.activeTexture(gl!.TEXTURE0 + BLUR);
 	gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA16F, bw, bh, 0, gl!.RGBA, gl!.FLOAT, packed);
 	blurSize = [bw, bh];
 }
 addEventListener("scroll", () => ((textDirty = true), wake()), { passive: true });
 
 // ---- state
-// Topo is the current direction; the others stay for comparison.
-let variant = ((params.get("v") as Variant) in VARIANTS ? params.get("v") : "topo") as Variant;
 let mode: Mode = params.has("tide") ? "scrub" : "live";
 let scrub = Number(params.get("tide") ?? 0.5);
 let lapseStart = performance.now();
@@ -270,8 +244,6 @@ const TEXT_MODES = ["split", "island", "hybrid"] as const;
 // Off: the canvas leaves the text to the DOM and skips all text work.
 let canvasText = !params.has("domtext");
 let textMode = Math.max(0, TEXT_MODES.indexOf((params.get("text") ?? "split") as (typeof TEXT_MODES)[number]));
-// Sea at the top reads as a map (or roots); at the bottom, as a horizon.
-let seaTop = params.get("sea") !== "bottom";
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const darkQuery = matchMedia("(prefers-color-scheme: dark)");
 const isDark = () => (root.dataset.theme ? root.dataset.theme === "dark" : darkQuery.matches);
@@ -311,12 +283,11 @@ let textMs = 0;
 let textDraws = 0;
 function draw(now: number) {
 	const resized = resize();
-	ensureBaked();
 	const tide = currentTide();
 
-	// The canvas takes over the text only for Topo, and only once the fonts
-	// have loaded; otherwise the ordinary DOM text shows.
-	const textOn = variant === "topo" && fontsReady && canvasText;
+	// The canvas takes over the text once the fonts have loaded. Until then
+	// the ordinary DOM text shows.
+	const textOn = fontsReady && canvasText;
 	stage.classList.toggle("on-canvas", textOn);
 	if (readout.textContent !== tide.label) {
 		readout.textContent = tide.label;
@@ -328,7 +299,7 @@ function draw(now: number) {
 		textMs += performance.now() - t0;
 		textDraws++;
 	}
-	const { program, uniforms } = programs[variant];
+	const { program, uniforms } = map;
 	const colors = palettes[isDark() ? "dark" : "light"];
 
 	gl!.viewport(0, 0, canvas.width, canvas.height);
@@ -338,14 +309,11 @@ function draw(now: number) {
 	gl!.uniform1f(uniforms.uLevel, tide.level);
 	gl!.uniform1f(uniforms.uRate, tide.rate);
 	gl!.uniform1f(uniforms.uNext, tide.next);
-	gl!.uniform1f(uniforms.uDark, isDark() ? 1 : 0);
 	gl!.uniform1f(uniforms.uFieldAspect, 1.6);
-	gl!.uniform1f(uniforms.uSeaTop, seaTop ? 1 : 0);
-	gl!.uniform1i(uniforms.uField, 0);
-	gl!.uniform1i(uniforms.uHeight, 1);
-	if (height) gl!.uniform2f(uniforms.uHeightSize, height.width, height.height);
-	gl!.uniform1i(uniforms.uText, 2);
-	gl!.uniform1i(uniforms.uBlur, 3);
+	gl!.uniform1i(uniforms.uHeight, HEIGHT);
+	gl!.uniform2f(uniforms.uHeightSize, height.width, height.height);
+	gl!.uniform1i(uniforms.uText, TEXT);
+	gl!.uniform1i(uniforms.uBlur, BLUR);
 	gl!.uniform2f(uniforms.uBlurSize, blurSize[0], blurSize[1]);
 	gl!.uniform1f(uniforms.uTextOn, textOn ? 1 : 0);
 	gl!.uniform1f(uniforms.uTextMode, textMode);
@@ -354,7 +322,7 @@ function draw(now: number) {
 	gl!.drawArrays(gl!.TRIANGLES, 0, 3);
 	frames++;
 	if (now - lastStat > 1000) {
-		stats.textContent = `${Math.round((frames * 1000) / (now - lastStat))} fps · ${canvas.width}×${canvas.height} · ${p3 ? "P3" : "sRGB"}${textDraws ? ` · text ×${textDraws}, ${(textMs / textDraws).toFixed(1)} ms each` : ""}${baked ? " · " + baked : ""}`;
+		stats.textContent = `${Math.round((frames * 1000) / (now - lastStat))} fps · ${canvas.width}×${canvas.height} · ${p3 ? "P3" : "sRGB"}${textDraws ? ` · text ×${textDraws}, ${(textMs / textDraws).toFixed(1)} ms each` : ""}${" · " + baked}`;
 		frames = 0;
 		textMs = 0;
 		textDraws = 0;
@@ -386,9 +354,6 @@ setInterval(() => reduceMotion.matches && wake(), 30000);
 
 // ---- controls
 function sync() {
-	document.querySelectorAll<HTMLButtonElement>("[data-variant]").forEach((b) =>
-		b.setAttribute("aria-pressed", String(b.dataset.variant === variant)),
-	);
 	document.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach((b) =>
 		b.setAttribute("aria-pressed", String(b.dataset.mode === mode)),
 	);
@@ -400,12 +365,6 @@ function sync() {
 	slider.value = String(scrub);
 	wake();
 }
-document.querySelectorAll<HTMLButtonElement>("[data-variant]").forEach((b) =>
-	b.addEventListener("click", () => {
-		variant = b.dataset.variant as Variant;
-		sync();
-	}),
-);
 document.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach((b) =>
 	b.addEventListener("click", () => {
 		mode = b.dataset.mode as Mode;

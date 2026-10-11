@@ -1,12 +1,12 @@
 ---
 import Base from "../../layouts/Base.astro";
 
-// Hero prototypes: a full-viewport tidal network driven by Seattle tide
+// Hero prototype: a full-viewport tidal map driven by Seattle tide
 // predictions. It's a working page under /design, so it's excluded from the
 // sitemap. The prototype code lives in src/prototypes/hero/.
 ---
 
-<Base title="Hero prototypes · whoami">
+<Base title="Hero prototype · whoami">
 	<meta slot="head" name="robots" content="noindex" />
 
 	<canvas id="hero" aria-hidden="true"></canvas>
@@ -18,13 +18,6 @@ import Base from "../../layouts/Base.astro";
 	</main>
 
 	<div class="controls">
-		<div class="group" role="group" aria-label="Prototype">
-			<button type="button" data-variant="flats">A · Flats</button>
-			<button type="button" data-variant="filaments">B · Filaments</button>
-			<button type="button" data-variant="terrain">C · Terrain</button>
-			<button type="button" data-variant="chart">D · Chart</button>
-			<button type="button" data-variant="topo">E · Topo</button>
-		</div>
 		<div class="group" role="group" aria-label="Tide">
 			<button type="button" data-mode="live">Live</button>
 			<button type="button" data-mode="lapse">Time-lapse</button>
