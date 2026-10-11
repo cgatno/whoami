@@ -238,3 +238,57 @@ void main() {
 
 	outColor = vec4(col, 1.0);
 }`;
+
+// Builds the input for the text blurs at reduced resolution: R and G = all
+// text, B = tagline and small text only. The readout goes in as a flat bar.
+export const FRAG_BLUR_SOURCE = /* glsl */ `#version 300 es
+precision highp float;
+out vec4 outColor;
+
+uniform sampler2D uText;
+uniform float uScale;      // device px per output pixel
+uniform vec2 uOffset;      // the mask's top-left, in device px from this target's
+uniform vec4 uBar;         // x0, y0, x1, y1 in device px from this target's top-left
+uniform float uBarValue;
+
+void main() {
+	vec2 p = gl_FragCoord.xy * uScale;
+	vec2 size = vec2(textureSize(uText, 0));
+	// Four bilinear taps average the block of mask texels under this pixel.
+	vec4 m = vec4(0.0);
+	for (int i = 0; i < 4; i++) {
+		vec2 q = p - uOffset + vec2(i % 2 == 0 ? -0.25 : 0.25, i < 2 ? -0.25 : 0.25) * uScale;
+		if (q == clamp(q, vec2(0.0), size)) m += 0.25 * texture(uText, q / size);
+	}
+	float bar = p.x >= uBar.x && p.y >= uBar.y && p.x < uBar.z && p.y < uBar.w ? uBarValue : 0.0;
+	float rest = max(m.b, bar);
+	float whole = max(m.r, rest);
+	outColor = vec4(whole, whole, rest, 1.0);
+}`;
+
+// One direction of a Gaussian blur. Run it twice, across and then down.
+export const FRAG_BLUR = /* glsl */ `#version 300 es
+precision highp float;
+out vec4 outColor;
+
+uniform sampler2D uSrc;
+uniform vec2 uStep;     // one texel along the blur direction, in uv
+uniform float uSigma;   // in texels
+
+void main() {
+	vec2 uv = gl_FragCoord.xy / vec2(textureSize(uSrc, 0));
+	vec4 sum = texture(uSrc, uv);
+	float total = 1.0;
+	float k = -0.5 / (uSigma * uSigma);
+	int reach = int(ceil(uSigma * 3.0));
+	// Each tap sits between two texels and lets bilinear filtering weigh them.
+	for (int i = 1; i <= reach; i += 2) {
+		float a = float(i), b = a + 1.0;
+		float wa = exp(k * a * a), wb = exp(k * b * b);
+		float w = wa + wb;
+		vec2 o = uStep * (a * wa + b * wb) / w;
+		sum += w * (texture(uSrc, uv + o) + texture(uSrc, uv - o));
+		total += 2.0 * w;
+	}
+	outColor = sum / total;
+}`;

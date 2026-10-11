@@ -1,7 +1,7 @@
 // Prototype harness: one full-viewport WebGL2 canvas and controls for the
 // tide and the text treatment.
 import { makeColors, type RGB } from "./color";
-import { FRAG, VERT } from "./shaders";
+import { FRAG, FRAG_BLUR, FRAG_BLUR_SOURCE, VERT } from "./shaders";
 import { tideAt } from "./tide";
 import { generateHeight } from "./topo";
 
@@ -76,12 +76,85 @@ function link(frag: string) {
 	return { program, uniforms };
 }
 const map = link(FRAG);
+const blurSource = link(FRAG_BLUR_SOURCE);
+const blur = link(FRAG_BLUR);
 gl.bindVertexArray(gl.createVertexArray());
 
 // Texture units.
 const HEIGHT = 0;
 const TEXT = 1;
 const BLUR = 2;
+const SCRATCH = 3; // whatever a render pass is reading from
+
+// ---- rendering into textures
+// Blurs run on the GPU as render passes. They need float targets to stay
+// smooth at the low thresholds the map shader reads them at. Without the
+// extension they fall back to 8 bits, which shows slight banding.
+const floatTargets = !!(gl.getExtension("EXT_color_buffer_float") || gl.getExtension("EXT_color_buffer_half_float"));
+const fbo = gl.createFramebuffer();
+type Uniforms = Record<string, WebGLUniformLocation | null>;
+
+function createTarget(unit = SCRATCH) {
+	const texture = gl!.createTexture();
+	gl!.activeTexture(gl!.TEXTURE0 + unit);
+	gl!.bindTexture(gl!.TEXTURE_2D, texture);
+	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, gl!.LINEAR);
+	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MAG_FILTER, gl!.LINEAR);
+	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_S, gl!.CLAMP_TO_EDGE);
+	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_T, gl!.CLAMP_TO_EDGE);
+	return texture;
+}
+
+function resizeTarget(texture: WebGLTexture, size: number[], unit = SCRATCH) {
+	gl!.activeTexture(gl!.TEXTURE0 + unit);
+	gl!.bindTexture(gl!.TEXTURE_2D, texture);
+	if (floatTargets) gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA16F, size[0], size[1], 0, gl!.RGBA, gl!.HALF_FLOAT, null);
+	else gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA8, size[0], size[1], 0, gl!.RGBA, gl!.UNSIGNED_BYTE, null);
+}
+
+/** Draws one full-target pass of `shader` into `target`, reading `source` if given. */
+function renderPass(
+	target: WebGLTexture,
+	size: number[],
+	shader: ReturnType<typeof link>,
+	source: WebGLTexture | null,
+	setUniforms: (uniforms: Uniforms) => void,
+) {
+	gl!.bindFramebuffer(gl!.FRAMEBUFFER, fbo);
+	gl!.framebufferTexture2D(gl!.FRAMEBUFFER, gl!.COLOR_ATTACHMENT0, gl!.TEXTURE_2D, target, 0);
+	gl!.viewport(0, 0, size[0], size[1]);
+	gl!.useProgram(shader.program);
+	if (source) {
+		gl!.activeTexture(gl!.TEXTURE0 + SCRATCH);
+		gl!.bindTexture(gl!.TEXTURE_2D, source);
+	}
+	setUniforms(shader.uniforms);
+	gl!.drawArrays(gl!.TRIANGLES, 0, 3);
+	gl!.bindFramebuffer(gl!.FRAMEBUFFER, null);
+}
+
+/**
+ * Gaussian blur of `source` into the chosen channels of `target`, by way of
+ * `scratch`. All three are the same size. `sigma` is in texels.
+ */
+function gaussian(
+	source: WebGLTexture,
+	scratch: WebGLTexture,
+	target: WebGLTexture,
+	size: number[],
+	sigma: number,
+	channels: [boolean, boolean, boolean, boolean],
+) {
+	const along = (dx: number, dy: number) => (u: Uniforms) => {
+		gl!.uniform1i(u.uSrc, SCRATCH);
+		gl!.uniform2f(u.uStep, dx / size[0], dy / size[1]);
+		gl!.uniform1f(u.uSigma, sigma);
+	};
+	renderPass(scratch, size, blur, source, along(1, 0));
+	gl!.colorMask(...channels);
+	renderPass(target, size, blur, scratch, along(0, 1));
+	gl!.colorMask(true, true, true, true);
+}
 
 // ---- terrain, baked once at load
 const seed = Number(params.get("seed") ?? 11);
@@ -112,23 +185,22 @@ const mask = document.createElement("canvas");
 const maskCtx = mask.getContext("2d")!;
 const strip = document.createElement("canvas");
 const stripCtx = strip.getContext("2d")!;
-const small = document.createElement("canvas");
-const smallCtx = small.getContext("2d", { willReadFrequently: true })!;
-for (const unit of [TEXT, BLUR]) {
-	gl.activeTexture(gl.TEXTURE0 + unit);
-	gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-}
+gl.activeTexture(gl.TEXTURE0 + TEXT);
+gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+const blurTexture = createTarget(BLUR);
+const blurInput = createTarget();
+const blurScratch = createTarget();
 
 // One mask channel per tier: red = the name, blue = the tagline, green = small.
 const TIER_COLOR: Record<string, string> = { display: "#f00", lead: "#00f", small: "#0f0" };
 const MARGIN = 4; // CSS px kept clear around the glyphs in the mask
 const PAD = 220; // CSS px around the mask for the blurred zone and island slopes
 const SLOT = 64; // CSS px. The readout's reserved width changes in these steps.
-const BLUR_DOWNSCALE = 4;
+const BLUR_DOWNSCALE = 4; // the blurs are smooth, so they don't need full resolution
 const BAR = 0.3; // the readout's weight in the blur, about the ink of small text
 
 interface Rect {
@@ -152,29 +224,6 @@ document.fonts.ready.then(() => {
 	layoutDirty = true;
 	wake();
 });
-
-// Three passes of a box blur approximate a Gaussian.
-function boxBlur(src: Float32Array, w: number, h: number, radius: number) {
-	let a = src;
-	let b = new Float32Array(src.length);
-	const pass = (n: number, stride: number, lines: number, step: number) => {
-		for (let l = 0; l < lines; l++) {
-			const base = l * step;
-			let sum = 0;
-			for (let k = -radius; k <= radius; k++) sum += a[base + Math.min(n - 1, Math.max(0, k)) * stride];
-			for (let k = 0; k < n; k++) {
-				b[base + k * stride] = sum / (2 * radius + 1);
-				sum += a[base + Math.min(n - 1, k + radius + 1) * stride] - a[base + Math.max(0, k - radius) * stride];
-			}
-		}
-		[a, b] = [b, a];
-	};
-	for (let i = 0; i < 3; i++) {
-		pass(w, 1, h, w);
-		pass(h, w, w, 1);
-	}
-	return a;
-}
 
 const deviceScale = () => canvas.width / canvas.clientWidth;
 const scrollOffset = (scale: number) => [Math.round(scrollX * scale), Math.round(scrollY * scale)];
@@ -259,48 +308,35 @@ function layoutText() {
 	strip.width = mask.width;
 	strip.height = Math.ceil(line.bottom * scale) - Math.floor(line.top * scale);
 
-	// Blurs, computed at reduced resolution (they are smooth, so nothing is
-	// lost). The readout goes in as a flat bar the width of its slot, so the
+	// Blurs. The readout goes in as a flat bar the width of its slot, so the
 	// blur does not depend on what the readout says.
 	const D = BLUR_DOWNSCALE;
 	const pad = Math.round((PAD * scale) / D);
-	const bw = Math.ceil(mask.width / D) + 2 * pad;
-	const bh = Math.ceil(mask.height / D) + 2 * pad;
-	small.width = bw;
-	small.height = bh;
-	smallCtx.fillStyle = "#000";
-	smallCtx.fillRect(0, 0, bw, bh);
-	smallCtx.drawImage(mask, pad, pad, mask.width / D, mask.height / D);
-	const px = smallCtx.getImageData(0, 0, bw, bh).data;
-	const barX0 = pad + (bar.left * scale - x0) / D, barX1 = pad + (bar.right * scale - x0) / D;
-	const barY0 = pad + stripTop / D, barY1 = pad + (stripTop + strip.height) / D;
-	const all = new Float32Array(bw * bh);
-	const rest = new Float32Array(bw * bh);
-	for (let y = 0, i = 0; y < bh; y++) {
-		for (let x = 0; x < bw; x++, i++) {
-			const inBar = x >= barX0 && x < barX1 && y >= barY0 && y < barY1 ? BAR : 0;
-			const name = px[i * 4] / 255, tagline = px[i * 4 + 2] / 255;
-			all[i] = Math.max(name, tagline, inBar);
-			rest[i] = Math.max(tagline, inBar); // tagline and small text only
-		}
+	const size = [Math.ceil(mask.width / D) + 2 * pad, Math.ceil(mask.height / D) + 2 * pad];
+	if (size[0] !== blurSize[0] || size[1] !== blurSize[1]) {
+		resizeTarget(blurTexture, size, BLUR);
+		resizeTarget(blurInput, size);
+		resizeTarget(blurScratch, size);
+		blurSize = size;
 	}
-	// Radii are in CSS px, converted to this texture's pixels.
-	const toBlurPx = (cssPx: number) => Math.max(1, Math.round((cssPx * scale) / D));
-	// boxBlur uses its input as scratch space, so take the copy first.
-	const wideAll = boxBlur(all.slice(), bw, bh, toBlurPx(62));
-	const tightAll = boxBlur(all, bw, bh, toBlurPx(12));
-	const tightRest = boxBlur(rest, bw, bh, toBlurPx(12));
-	const packed = new Float32Array(bw * bh * 4);
-	for (let i = 0; i < bw * bh; i++) {
-		packed[i * 4] = tightAll[i];
-		packed[i * 4 + 1] = wideAll[i];
-		packed[i * 4 + 2] = tightRest[i];
-		packed[i * 4 + 3] = 1;
-	}
-	gl!.activeTexture(gl!.TEXTURE0 + BLUR);
-	gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA16F, bw, bh, 0, gl!.RGBA, gl!.FLOAT, packed);
-	blurSize = [bw, bh];
-	blurRect = { x: maskRect.x - pad * D, y: maskRect.y - pad * D, w: bw * D, h: bh * D };
+	renderPass(blurInput, size, blurSource, null, (u) => {
+		gl!.uniform1i(u.uText, TEXT);
+		gl!.uniform1f(u.uScale, D);
+		gl!.uniform2f(u.uOffset, pad * D, pad * D);
+		gl!.uniform4f(
+			u.uBar,
+			pad * D + bar.left * scale - x0,
+			pad * D + stripTop,
+			pad * D + bar.right * scale - x0,
+			pad * D + stripTop + strip.height,
+		);
+		gl!.uniform1f(u.uBarValue, BAR);
+	});
+	// Radii are in CSS px. Sigma is in the blur texture's texels.
+	const sigma = (cssPx: number) => (cssPx * scale) / D + 0.5;
+	gaussian(blurInput, blurScratch, blurTexture, size, sigma(12), [true, false, true, false]);
+	gaussian(blurInput, blurScratch, blurTexture, size, sigma(62), [false, true, false, false]);
+	blurRect = { x: maskRect.x - pad * D, y: maskRect.y - pad * D, w: size[0] * D, h: size[1] * D };
 	layoutDirty = readoutDirty = false;
 }
 
