@@ -1,9 +1,18 @@
 // Prototype harness: one full-viewport WebGL2 canvas and controls for the
 // tide and the text treatment.
 import { makeColors, type RGB } from "./color";
-import { FRAG, FRAG_BLUR, FRAG_BLUR_SOURCE, VERT } from "./shaders";
+import {
+	FRAG,
+	FRAG_BLUR,
+	FRAG_BLUR_SOURCE,
+	FRAG_TERRAIN_FINISH,
+	FRAG_TERRAIN_NOISE,
+	FRAG_VALLEYS,
+	VERT,
+	VERT_VALLEYS,
+} from "./shaders";
 import { tideAt } from "./tide";
-import { generateHeight } from "./topo";
+import { buildValleys, generateHeight, SEGMENT_FLOATS, SHAPE } from "./topo";
 
 type Mode = "live" | "scrub" | "lapse";
 
@@ -13,7 +22,15 @@ const stats = document.querySelector<HTMLElement>("#hero-stats")!;
 const root = document.documentElement;
 const params = new URLSearchParams(location.search);
 
-const gl = canvas.getContext("webgl2", { antialias: false, alpha: false, powerPreference: "low-power" });
+// The map is one opaque full-screen quad, so the canvas needs no depth,
+// stencil or multisampling of its own.
+const gl = canvas.getContext("webgl2", {
+	antialias: false,
+	alpha: false,
+	depth: false,
+	stencil: false,
+	powerPreference: "low-power",
+});
 if (!gl) {
 	stats.textContent = "WebGL2 is not available in this browser.";
 	throw new Error("WebGL2 unavailable");
@@ -54,16 +71,24 @@ const palettes: Record<"light" | "dark", Record<string, RGB>> = {
 };
 
 // ---- program
+// ?coldshaders adds a test that never passes, with a different number on
+// every load, to each fragment shader. The browser's shader cache then
+// misses, and the compile times are what a first visit would see.
+const uncached = params.has("coldshaders")
+	? `void main() {\n\tif (gl_FragCoord.x < -1.0 - ${Math.random()}) discard;`
+	: "void main() {";
+let compileMs = 0;
 function compile(type: number, src: string) {
 	const s = gl!.createShader(type)!;
-	gl!.shaderSource(s, src);
+	gl!.shaderSource(s, type === gl!.FRAGMENT_SHADER ? src.replace("void main() {", uncached) : src);
 	gl!.compileShader(s);
 	if (!gl!.getShaderParameter(s, gl!.COMPILE_STATUS)) throw new Error(gl!.getShaderInfoLog(s) ?? "shader error");
 	return s;
 }
-function link(frag: string) {
+function link(frag: string, vert = VERT) {
+	const t0 = performance.now();
 	const program = gl!.createProgram()!;
-	gl!.attachShader(program, compile(gl!.VERTEX_SHADER, VERT));
+	gl!.attachShader(program, compile(gl!.VERTEX_SHADER, vert));
 	gl!.attachShader(program, compile(gl!.FRAGMENT_SHADER, frag));
 	gl!.linkProgram(program);
 	if (!gl!.getProgramParameter(program, gl!.LINK_STATUS)) throw new Error(gl!.getProgramInfoLog(program) ?? "link error");
@@ -73,12 +98,16 @@ function link(frag: string) {
 		const info = gl!.getActiveUniform(program, i)!;
 		uniforms[info.name] = gl!.getUniformLocation(program, info.name);
 	}
+	compileMs += performance.now() - t0;
 	return { program, uniforms };
 }
 const map = link(FRAG);
 const blurSource = link(FRAG_BLUR_SOURCE);
 const blur = link(FRAG_BLUR);
-gl.bindVertexArray(gl.createVertexArray());
+// The full-screen passes take their corners from gl_VertexID and need no
+// attributes.
+const fullScreen = gl.createVertexArray();
+gl.bindVertexArray(fullScreen);
 
 // Texture units.
 const HEIGHT = 0;
@@ -159,25 +188,160 @@ function gaussian(
 // ---- terrain, baked once at load
 // The texture holds the ground twice: R as baked, and G blurred. Near text
 // the map shader reads the blurred copy so the waterline stays smooth.
+//
+// ?bake=gpu or ?bake=cpu picks how the valleys are stamped in. ?bake=compare
+// runs both and reports how far apart they are.
 const seed = Number(params.get("seed") ?? 11);
-const height = generateHeight(seed);
-const heightSize = [height.width, height.height];
 const SMOOTH_SIGMA = 13.4; // texels
+const bakeMode = params.get("bake") ?? (floatTargets ? "gpu" : "cpu");
+const valleys = buildValleys(seed);
+const heightSize = [valleys.width, valleys.height];
+const heightTexture = createTarget(HEIGHT, gl.MIRRORED_REPEAT);
+gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RG16F, heightSize[0], heightSize[1]);
+
+/** Stamps the valleys into heightTexture's R and G with render passes. See the terrain shaders. */
+function bakeOnGpu(mark: (stage: string) => void = () => {}) {
+	const [w, h] = heightSize;
+	const noiseShader = link(FRAG_TERRAIN_NOISE);
+	const valleyShader = link(FRAG_VALLEYS, VERT_VALLEYS);
+	const finishShader = link(FRAG_TERRAIN_FINISH);
+	const NOISE = SCRATCH + 1; // a second input unit, for the passes that read two textures
+	mark("compile");
+
+	// 1. Noise. 32-bit floats where they can be rendered to.
+	const noise = createTarget(NOISE);
+	gl!.texStorage2D(gl!.TEXTURE_2D, 1, gl!.getExtension("EXT_color_buffer_float") ? gl!.RG32F : gl!.RGBA16F, w, h);
+	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, gl!.NEAREST);
+	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MAG_FILTER, gl!.NEAREST);
+	renderPass(noise, heightSize, noiseShader, null, (u) => gl!.uniform1ui(u.uSeed, seed));
+	mark("noise");
+
+	// 2. Valleys, as instanced quads into a depth texture.
+	const depth = gl!.createTexture();
+	gl!.activeTexture(gl!.TEXTURE0 + SCRATCH);
+	gl!.bindTexture(gl!.TEXTURE_2D, depth);
+	gl!.texStorage2D(gl!.TEXTURE_2D, 1, gl!.DEPTH_COMPONENT24, w, h);
+	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, gl!.NEAREST);
+	gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MAG_FILTER, gl!.NEAREST);
+	const depthFbo = gl!.createFramebuffer();
+	gl!.bindFramebuffer(gl!.FRAMEBUFFER, depthFbo);
+	gl!.framebufferTexture2D(gl!.FRAMEBUFFER, gl!.DEPTH_ATTACHMENT, gl!.TEXTURE_2D, depth, 0);
+	gl!.drawBuffers([gl!.NONE]);
+	gl!.readBuffer(gl!.NONE);
+
+	const quads = gl!.createVertexArray();
+	const instances = gl!.createBuffer();
+	gl!.bindVertexArray(quads);
+	gl!.bindBuffer(gl!.ARRAY_BUFFER, instances);
+	gl!.bufferData(gl!.ARRAY_BUFFER, valleys.segments, gl!.STATIC_DRAW);
+	const stride = SEGMENT_FLOATS * 4;
+	for (const [location, size, offset] of [[0, 4, 0], [1, 4, 16], [2, 1, 32]]) {
+		gl!.enableVertexAttribArray(location);
+		gl!.vertexAttribPointer(location, size, gl!.FLOAT, false, stride, offset);
+		gl!.vertexAttribDivisor(location, 1);
+	}
+
+	gl!.viewport(0, 0, w, h);
+	gl!.enable(gl!.DEPTH_TEST);
+	gl!.depthFunc(gl!.LESS);
+	gl!.clearDepth(1);
+	gl!.clear(gl!.DEPTH_BUFFER_BIT);
+	gl!.useProgram(valleyShader.program);
+	gl!.uniform2f(valleyShader.uniforms.uSize, w, h);
+	gl!.uniform1i(valleyShader.uniforms.uNoise, NOISE);
+	gl!.drawArraysInstanced(gl!.TRIANGLE_STRIP, 0, 4, valleys.count);
+	gl!.disable(gl!.DEPTH_TEST);
+	gl!.bindVertexArray(fullScreen);
+	gl!.bindFramebuffer(gl!.FRAMEBUFFER, null);
+	mark("valleys");
+
+	// 3. Finish, then the light blur that rounds off banks and ridges.
+	const raw = createTarget(SCRATCH, gl!.MIRRORED_REPEAT);
+	const scratch = createTarget(SCRATCH, gl!.MIRRORED_REPEAT);
+	resizeTarget(raw, heightSize);
+	resizeTarget(scratch, heightSize);
+	renderPass(raw, heightSize, finishShader, depth, (u) => {
+		gl!.uniform1i(u.uDepth, SCRATCH);
+		gl!.uniform1i(u.uNoise, NOISE);
+	});
+	gaussian(raw, scratch, heightTexture, heightSize, SHAPE.BLUR_SIGMA, [true, true, false, false]);
+	mark("finish");
+
+	for (const texture of [noise, depth, raw, scratch]) gl!.deleteTexture(texture);
+	gl!.deleteFramebuffer(depthFbo);
+	gl!.deleteVertexArray(quads);
+	gl!.deleteBuffer(instances);
+	for (const shader of [noiseShader, valleyShader, finishShader]) gl!.deleteProgram(shader.program);
+}
+
+/** The JavaScript bake, uploaded into heightTexture's R and G. */
+function bakeOnCpu() {
+	const { data } = generateHeight(valleys);
+	const both = new Float32Array(data.length * 2);
+	for (let i = 0; i < data.length; i++) both[i * 2] = both[i * 2 + 1] = data[i];
+	gl!.activeTexture(gl!.TEXTURE0 + HEIGHT);
+	gl!.texSubImage2D(gl!.TEXTURE_2D, 0, 0, 0, heightSize[0], heightSize[1], gl!.RG, gl!.FLOAT, both);
+	return data;
+}
+
+/** Reads heightTexture's R channel back. It stalls until the GPU has caught up, so it is only for measuring. */
+function readHeight() {
+	gl!.bindFramebuffer(gl!.FRAMEBUFFER, fbo);
+	gl!.framebufferTexture2D(gl!.FRAMEBUFFER, gl!.COLOR_ATTACHMENT0, gl!.TEXTURE_2D, heightTexture, 0);
+	const pixels = new Float32Array(heightSize[0] * heightSize[1] * 4);
+	gl!.readPixels(0, 0, heightSize[0], heightSize[1], gl!.RGBA, gl!.FLOAT, pixels);
+	gl!.bindFramebuffer(gl!.FRAMEBUFFER, null);
+	return pixels.filter((_, i) => i % 4 === 0);
+}
+
+const mapShadersMs = compileMs;
+let baked = `map shaders ${mapShadersMs.toFixed(0)} ms · ${valleys.count.toLocaleString()} valleys in ${valleys.ms.toFixed(0)} ms`;
 {
-	const both = new Float32Array(height.data.length * 2);
-	for (let i = 0; i < height.data.length; i++) both[i * 2] = both[i * 2 + 1] = height.data[i];
-	const texture = createTarget(HEIGHT, gl.MIRRORED_REPEAT);
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG16F, heightSize[0], heightSize[1], 0, gl.RG, gl.FLOAT, both);
+	const t0 = performance.now();
+	if (bakeMode === "cpu") {
+		bakeOnCpu();
+		baked += ` · cpu bake ${(performance.now() - t0).toFixed(0)} ms`;
+	} else {
+		const stages: string[] = [];
+		let last = t0;
+		bakeOnGpu((stage) => {
+			stages.push(`${stage} ${(performance.now() - last).toFixed(1)}`);
+			last = performance.now();
+		});
+		baked += ` · gpu bake submitted in ${(performance.now() - t0).toFixed(1)} ms (${stages.join(", ")})`;
+		if (bakeMode === "compare") {
+			// Reading one texel of the result waits for the GPU to finish it.
+			gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, heightTexture, 0);
+			gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.FLOAT, new Float32Array(4));
+			baked += `, done in ${(performance.now() - t0).toFixed(1)} ms`;
+			const gpu = readHeight();
+			const t1 = performance.now();
+			const cpu = generateHeight(valleys).data;
+			// The two blur differently at the very edge of the field (one clamps,
+			// one mirrors), so the largest difference is also given without it.
+			const EDGE = 8;
+			let sum = 0, max = 0, maxInside = 0;
+			for (let i = 0; i < cpu.length; i++) {
+				const d = Math.abs(cpu[i] - Math.min(1, Math.max(0, gpu[i])));
+				sum += d;
+				max = Math.max(max, d);
+				const x = i % heightSize[0], y = (i / heightSize[0]) | 0;
+				if (x >= EDGE && y >= EDGE && x < heightSize[0] - EDGE && y < heightSize[1] - EDGE) maxInside = Math.max(maxInside, d);
+			}
+			baked += ` · cpu ${(performance.now() - t1).toFixed(0)} ms · mean diff ${(sum / cpu.length).toExponential(2)}, max ${max.toExponential(2)} (${maxInside.toExponential(2)} away from the edges)`;
+			console.log(baked);
+		}
+	}
 	// Without float targets G stays a plain copy, and the waterline near
 	// text is a little rougher.
 	if (floatTargets) {
 		const scratch = createTarget(SCRATCH, gl.MIRRORED_REPEAT);
 		resizeTarget(scratch, heightSize);
-		gaussian(texture, scratch, texture, heightSize, SMOOTH_SIGMA, [false, true, false, false]);
+		gaussian(heightTexture, scratch, heightTexture, heightSize, SMOOTH_SIGMA, [false, true, false, false]);
 		gl.deleteTexture(scratch);
 	}
 }
-const baked = `terrain from ${height.valleys.toLocaleString()} valley segments in ${Math.round(height.ms)} ms`;
 
 // ---- text drawn in the shader
 // The real text stays in the DOM (for screen readers, selection and search)

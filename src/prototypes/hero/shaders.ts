@@ -1,5 +1,8 @@
-// The hero's shaders: one full-screen fragment shader that draws the map, and
-// the vertex shader that feeds it.
+// The hero's shaders: the fragment shader that draws the map, and the small
+// passes that prepare its textures.
+import { SHAPE, TEXELS_PER_CELL } from "./topo";
+
+const float = (n: number) => (Number.isInteger(n) ? n.toFixed(1) : String(n));
 
 export const VERT = /* glsl */ `#version 300 es
 void main() {
@@ -14,6 +17,7 @@ void main() {
 // water spreads up the trunks and then the tributaries.
 export const FRAG = /* glsl */ `#version 300 es
 precision highp float;
+precision highp sampler2D;
 out vec4 outColor;
 
 uniform vec2 uRes;
@@ -233,6 +237,7 @@ void main() {
 // text, B = tagline and small text only. The readout goes in as a flat bar.
 export const FRAG_BLUR_SOURCE = /* glsl */ `#version 300 es
 precision highp float;
+precision highp sampler2D;
 out vec4 outColor;
 
 uniform sampler2D uText;
@@ -259,6 +264,7 @@ void main() {
 // One direction of a Gaussian blur. Run it twice, across and then down.
 export const FRAG_BLUR = /* glsl */ `#version 300 es
 precision highp float;
+precision highp sampler2D;
 out vec4 outColor;
 
 uniform sampler2D uSrc;
@@ -281,4 +287,109 @@ void main() {
 		total += 2.0 * w;
 	}
 	outColor = sum / total;
+}`;
+
+// ---- terrain bake
+// Three passes do on the GPU what generateHeight() in topo.ts does in
+// JavaScript: noise, then the valleys, then the finishing touches. A blur
+// follows.
+
+// The same value noise as network.ts, so both versions agree.
+const TERRAIN_COMMON = /* glsl */ `#version 300 es
+precision highp float;
+precision highp int;
+precision highp sampler2D;
+
+const float S = ${float(TEXELS_PER_CELL)};
+const float BANK_WIDTH = ${float(SHAPE.BANK_WIDTH)};
+const float BANK_SLOPE = ${float(SHAPE.BANK_SLOPE)};
+const float CEILING = ${float(SHAPE.CEILING)};
+const float MAX_HEIGHT = ${float(SHAPE.MAX_HEIGHT)};
+// Valley heights are written as depth, scaled by this. It only has to be
+// above the ceiling.
+const float DEPTH_RANGE = 128.0;
+`;
+
+// Hillside steepness (R) and broad relief (G) for every texel.
+export const FRAG_TERRAIN_NOISE = TERRAIN_COMMON + /* glsl */ `
+out vec4 outColor;
+uniform uint uSeed;
+
+float lattice(ivec2 p) {
+	uint n = uint(p.x) * 374761393u + uint(p.y) * 668265263u + uSeed * 1442695041u;
+	n = (n ^ (n >> 13)) * 1274126177u;
+	return float(n ^ (n >> 16)) / 4294967295.0;
+}
+float noise(vec2 p) {
+	vec2 i = floor(p), f = p - i;
+	vec2 u = f * f * (3.0 - 2.0 * f);
+	ivec2 c = ivec2(i);
+	float a = lattice(c), b = lattice(c + ivec2(1, 0)), d = lattice(c + ivec2(0, 1)), e = lattice(c + ivec2(1, 1));
+	return a + (b - a) * u.x + (d - a) * u.y + (a - b - d + e) * u.x * u.y;
+}
+float fbm(vec2 p) {
+	return 0.5 * noise(p) + 0.25 * noise(p * 2.1 + vec2(9.0, 4.0)) + 0.125 * noise(p * 4.3 + vec2(2.0, 7.0));
+}
+
+void main() {
+	vec2 cell = (gl_FragCoord.xy - 0.5) / S;
+	float hillside = 0.55 + 0.9 * fbm(cell * 0.03 + vec2(40.0, 12.0));
+	float relief = 8.0 * (fbm(cell * 0.018 + vec2(7.0, 31.0)) - 0.44);
+	outColor = vec4(hillside, relief, 0.0, 1.0);
+}`;
+
+// One instanced quad per valley segment, covering everything the valley's
+// slopes can reach.
+export const VERT_VALLEYS = TERRAIN_COMMON + /* glsl */ `
+layout(location = 0) in vec4 aEnds;    // ax, ay, bx, by in texels
+layout(location = 1) in vec4 aFloor;   // height at a and b, half-width at a and b
+layout(location = 2) in float aReach;  // texels
+uniform vec2 uSize;
+out vec4 vEnds;
+out vec4 vFloor;
+
+void main() {
+	vec2 lo = max(floor(min(aEnds.xy, aEnds.zw) - aReach), vec2(0.0));
+	vec2 hi = min(ceil(max(aEnds.xy, aEnds.zw) + aReach), uSize - 1.0) + 1.0;
+	vec2 p = mix(lo, hi, vec2(gl_VertexID & 1, gl_VertexID >> 1));
+	gl_Position = vec4(p / uSize * 2.0 - 1.0, 0.0, 1.0);
+	vEnds = aEnds;
+	vFloor = aFloor;
+}`;
+
+// Each fragment works out how high the ground would be if this valley were
+// the only one, and writes that as its depth. The depth test keeps the lowest
+// value per texel, which is the lower envelope. Using depth for this needs no
+// float blending and gives 24 bits of precision.
+export const FRAG_VALLEYS = TERRAIN_COMMON + /* glsl */ `
+in vec4 vEnds;
+in vec4 vFloor;
+uniform sampler2D uNoise;
+
+void main() {
+	vec2 q = gl_FragCoord.xy - vEnds.xy;
+	vec2 along = vEnds.zw - vEnds.xy;
+	float t = clamp(dot(q, along) / max(dot(along, along), 1e-6), 0.0, 1.0);
+	// Distance beyond the edge of the flat floor, in cells.
+	float d = length(q - t * along) / S - mix(vFloor.z, vFloor.w, t);
+	float v = mix(vFloor.x, vFloor.y, t);
+	if (d > 0.0) {
+		float hillside = texelFetch(uNoise, ivec2(gl_FragCoord.xy), 0).r;
+		v += d < BANK_WIDTH ? BANK_SLOPE * d : BANK_SLOPE * BANK_WIDTH + hillside * (d - BANK_WIDTH);
+	}
+	gl_FragDepth = clamp(v / DEPTH_RANGE, 0.0, 1.0);
+}`;
+
+// Reads the depths back as heights, caps them at the ceiling, adds the broad
+// relief and normalizes.
+export const FRAG_TERRAIN_FINISH = TERRAIN_COMMON + /* glsl */ `
+out vec4 outColor;
+uniform sampler2D uDepth;
+uniform sampler2D uNoise;
+
+void main() {
+	ivec2 texel = ivec2(gl_FragCoord.xy);
+	float z = min(texelFetch(uDepth, texel, 0).r * DEPTH_RANGE, CEILING);
+	z += texelFetch(uNoise, texel, 0).g;
+	outColor = vec4(z / MAX_HEIGHT);
 }`;
