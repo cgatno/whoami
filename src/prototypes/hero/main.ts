@@ -16,6 +16,8 @@ import { buildValleys, generateHeight, SEGMENT_FLOATS, SHAPE } from "./topo";
 
 type Mode = "live" | "scrub" | "lapse";
 
+const scriptStart = performance.now();
+
 const canvas = document.querySelector<HTMLCanvasElement>("#hero")!;
 const readout = document.querySelector<HTMLElement>("#tide-readout")!;
 const stats = document.querySelector<HTMLElement>("#hero-stats")!;
@@ -68,40 +70,92 @@ const palettes: Record<"light" | "dark", Record<string, RGB>> = {
 	},
 };
 
-// ---- program
+// Float render targets let the blurs and the terrain bake run on the GPU.
+const floatTargets = !!(gl.getExtension("EXT_color_buffer_float") || gl.getExtension("EXT_color_buffer_half_float"));
+const seed = Number(params.get("seed") ?? 11);
+// ?bake=gpu or ?bake=cpu picks how the terrain's valleys are stamped in.
+// ?bake=compare runs both and reports how far apart they are.
+const bakeMode = params.get("bake") ?? (floatTargets ? "gpu" : "cpu");
+
+// ---- programs
+// Compiling shaders is the slowest part of a first visit, so every program
+// is started here and none is asked about until it is needed. With
+// KHR_parallel_shader_compile the browser compiles them on other threads and
+// the page stays responsive meanwhile. Without it, the first question about
+// a program waits for that program.
+// ?blocking turns that off, to compare.
+const parallel = params.has("blocking") ? null : gl.getExtension("KHR_parallel_shader_compile");
+type Uniforms = Record<string, WebGLUniformLocation | null>;
+type Shader = { program: WebGLProgram; uniforms: Uniforms };
+
 // ?coldshaders adds a test that never passes, with a different number on
 // every load, to each fragment shader. The browser's shader cache then
 // misses, and the compile times are what a first visit would see.
 const uncached = params.has("coldshaders")
 	? `void main() {\n\tif (gl_FragCoord.x < -1.0 - ${Math.random()}) discard;`
 	: "void main() {";
-let compileMs = 0;
-function compile(type: number, src: string) {
-	const s = gl!.createShader(type)!;
-	gl!.shaderSource(s, type === gl!.FRAGMENT_SHADER ? src.replace("void main() {", uncached) : src);
-	gl!.compileShader(s);
-	if (!gl!.getShaderParameter(s, gl!.COMPILE_STATUS)) throw new Error(gl!.getShaderInfoLog(s) ?? "shader error");
-	return s;
-}
-function link(frag: string, vert = VERT) {
-	const t0 = performance.now();
+
+function startProgram(frag: string, vert = VERT) {
 	const program = gl!.createProgram()!;
-	gl!.attachShader(program, compile(gl!.VERTEX_SHADER, vert));
-	gl!.attachShader(program, compile(gl!.FRAGMENT_SHADER, frag));
+	const shaders = [
+		[gl!.VERTEX_SHADER, vert],
+		[gl!.FRAGMENT_SHADER, frag.replace("void main() {", uncached)],
+	].map(([type, source]) => {
+		const shader = gl!.createShader(type as number)!;
+		gl!.shaderSource(shader, source as string);
+		gl!.compileShader(shader);
+		gl!.attachShader(program, shader);
+		return shader;
+	});
 	gl!.linkProgram(program);
-	if (!gl!.getProgramParameter(program, gl!.LINK_STATUS)) throw new Error(gl!.getProgramInfoLog(program) ?? "link error");
-	const uniforms: Record<string, WebGLUniformLocation | null> = {};
+	return { program, shaders };
+}
+type Pending = ReturnType<typeof startProgram>;
+
+/** Resolves once these programs have compiled. It only waits where the browser can compile in the background. */
+async function compiled(...pending: Pending[]) {
+	if (!parallel) return;
+	while (!pending.every(({ program }) => gl!.getProgramParameter(program, parallel.COMPLETION_STATUS_KHR))) {
+		await new Promise((resolve) => setTimeout(resolve, 4));
+	}
+}
+
+/** Checks a program that has finished compiling and looks up its uniforms. */
+function finish({ program, shaders }: Pending): Shader {
+	if (!gl!.getProgramParameter(program, gl!.LINK_STATUS)) {
+		const logs = [gl!.getProgramInfoLog(program), ...shaders.map((shader) => gl!.getShaderInfoLog(shader))];
+		throw new Error(logs.filter(Boolean).join("\n") || "shader error");
+	}
+	for (const shader of shaders) gl!.deleteShader(shader);
+	const uniforms: Uniforms = {};
 	const count = gl!.getProgramParameter(program, gl!.ACTIVE_UNIFORMS) as number;
 	for (let i = 0; i < count; i++) {
 		const info = gl!.getActiveUniform(program, i)!;
 		uniforms[info.name] = gl!.getUniformLocation(program, info.name);
 	}
-	compileMs += performance.now() - t0;
 	return { program, uniforms };
 }
-const map = link(FRAG);
-const blurSource = link(FRAG_BLUR_SOURCE);
-const blur = link(FRAG_BLUR);
+
+const pending = {
+	map: startProgram(FRAG),
+	blur: startProgram(FRAG_BLUR),
+	blurSource: startProgram(FRAG_BLUR_SOURCE),
+	// The terrain bake's three, when it runs on the GPU.
+	bake: bakeMode === "cpu" ? [] : [startProgram(FRAG_TERRAIN_NOISE), startProgram(FRAG_VALLEYS, VERT_VALLEYS), startProgram(FRAG_TERRAIN_FINISH)],
+};
+// The drainage tree is plain JavaScript, so it is built while they compile.
+const valleys = buildValleys(seed);
+// The first frame needs all of them except the text blur's input, which
+// can arrive later along with the fonts.
+const yielded = performance.now();
+await compiled(pending.map, pending.blur, ...pending.bake);
+const resumed = performance.now();
+const map = finish(pending.map);
+const blur = finish(pending.blur);
+const compileNote = parallel
+	? `shaders compiled in the background, ready at ${(resumed - scriptStart).toFixed(0)} ms`
+	: "shaders compiled while blocking";
+
 // The full-screen passes take their corners from gl_VertexID and need no
 // attributes.
 const fullScreen = gl.createVertexArray();
@@ -115,11 +169,9 @@ const SCRATCH = 3; // whatever a render pass is reading from
 
 // ---- rendering into textures
 // Blurs run on the GPU as render passes. They need float targets to stay
-// smooth at the low thresholds the map shader reads them at. Without the
-// extension they fall back to 8 bits, which shows slight banding.
-const floatTargets = !!(gl.getExtension("EXT_color_buffer_float") || gl.getExtension("EXT_color_buffer_half_float"));
+// smooth at the low thresholds the map shader reads them at. Without them
+// they fall back to 8 bits, which shows slight banding.
 const fbo = gl.createFramebuffer();
-type Uniforms = Record<string, WebGLUniformLocation | null>;
 
 function createTarget(unit = SCRATCH, wrap: number = gl!.CLAMP_TO_EDGE) {
 	const texture = gl!.createTexture();
@@ -143,7 +195,7 @@ function resizeTarget(texture: WebGLTexture, size: number[], unit = SCRATCH) {
 function renderPass(
 	target: WebGLTexture,
 	size: number[],
-	shader: ReturnType<typeof link>,
+	shader: Shader,
 	source: WebGLTexture | null,
 	setUniforms: (uniforms: Uniforms) => void,
 ) {
@@ -186,13 +238,7 @@ function gaussian(
 // ---- terrain, baked once at load
 // The texture holds the ground twice: R as baked, and G blurred. Near text
 // the map shader reads the blurred copy so the waterline stays smooth.
-//
-// ?bake=gpu or ?bake=cpu picks how the valleys are stamped in. ?bake=compare
-// runs both and reports how far apart they are.
-const seed = Number(params.get("seed") ?? 11);
 const SMOOTH_SIGMA = 13.4; // texels
-const bakeMode = params.get("bake") ?? (floatTargets ? "gpu" : "cpu");
-const valleys = buildValleys(seed);
 const heightSize = [valleys.width, valleys.height];
 const heightTexture = createTarget(HEIGHT, gl.MIRRORED_REPEAT);
 gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RG16F, heightSize[0], heightSize[1]);
@@ -200,11 +246,8 @@ gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RG16F, heightSize[0], heightSize[1]);
 /** Stamps the valleys into heightTexture's R and G with render passes. See the terrain shaders. */
 function bakeOnGpu(mark: (stage: string) => void = () => {}) {
 	const [w, h] = heightSize;
-	const noiseShader = link(FRAG_TERRAIN_NOISE);
-	const valleyShader = link(FRAG_VALLEYS, VERT_VALLEYS);
-	const finishShader = link(FRAG_TERRAIN_FINISH);
+	const [noiseShader, valleyShader, finishShader] = pending.bake.map(finish);
 	const NOISE = SCRATCH + 1; // a second input unit, for the passes that read two textures
-	mark("compile");
 
 	// 1. Noise. 32-bit floats where they can be rendered to.
 	const noise = createTarget(NOISE);
@@ -292,8 +335,7 @@ function readHeight() {
 	return pixels.filter((_, i) => i % 4 === 0);
 }
 
-const mapShadersMs = compileMs;
-let baked = `map shaders ${mapShadersMs.toFixed(0)} ms · ${valleys.count.toLocaleString()} valleys in ${valleys.ms.toFixed(0)} ms`;
+let baked = `${compileNote} · ${valleys.count.toLocaleString()} valleys in ${valleys.ms.toFixed(0)} ms`;
 {
 	const t0 = performance.now();
 	if (bakeMode === "cpu") {
@@ -397,6 +439,12 @@ document.fonts.ready.then(() => {
 	layoutDirty = true;
 	wake();
 });
+let blurSource: Shader | undefined;
+compiled(pending.blurSource).then(() => {
+	blurSource = finish(pending.blurSource);
+	layoutDirty = true;
+	wake();
+});
 
 const deviceScale = () => canvas.width / canvas.clientWidth;
 const scrollOffset = (scale: number) => [Math.round(scrollX * scale), Math.round(scrollY * scale)];
@@ -492,7 +540,7 @@ function layoutText() {
 		resizeTarget(blurScratch, size);
 		blurSize = size;
 	}
-	renderPass(blurInput, size, blurSource, null, (u) => {
+	renderPass(blurInput, size, blurSource!, null, (u) => {
 		gl!.uniform1i(u.uText, TEXT);
 		gl!.uniform1f(u.uScale, D);
 		gl!.uniform2f(u.uOffset, pad * D, pad * D);
@@ -570,6 +618,7 @@ function resize() {
 }
 
 const start = performance.now();
+let firstFrame = "";
 let frames = 0;
 let lastStat = start;
 // Text work since the last stats update: [count, total ms] for each kind.
@@ -584,9 +633,9 @@ function draw(now: number) {
 	const resized = resize();
 	const tide = currentTide();
 
-	// The canvas takes over the text once the fonts have loaded. Until then
-	// the ordinary DOM text shows.
-	const textOn = fontsReady && canvasText;
+	// The canvas takes over the text once the fonts and the text shader are
+	// ready. Until then the ordinary DOM text shows.
+	const textOn = fontsReady && !!blurSource && canvasText;
 	stage.classList.toggle("on-canvas", textOn);
 	if (readout.textContent !== tide.label) {
 		readout.textContent = tide.label;
@@ -619,13 +668,21 @@ function draw(now: number) {
 	gl!.uniform4f(uniforms.uBlurRect, blurRect.x - sx, blurRect.y - sy, blurRect.w, blurRect.h);
 	for (const [name, c] of Object.entries(colors)) gl!.uniform3f(uniforms[name], c[0], c[1], c[2]);
 	gl!.drawArrays(gl!.TRIANGLES, 0, 3);
+	if (!firstFrame) {
+		// The canvas stays hidden until it has something to show.
+		canvas.classList.add("ready");
+		const now = performance.now();
+		const busy = yielded - scriptStart + (now - resumed);
+		firstFrame = `first frame ${(now - scriptStart).toFixed(0)} ms after the script started, main thread busy for ${busy.toFixed(0)} ms of it`;
+		console.log(`${firstFrame} · ${baked}`);
+	}
 	frames++;
 	if (now - lastStat > 1000) {
 		const work = Object.entries(textWork)
 			.filter(([, [n]]) => n)
 			.map(([kind, [n, ms]]) => ` · ${kind} ×${n}, ${(ms / n).toFixed(1)} ms each`)
 			.join("");
-		stats.textContent = `${Math.round((frames * 1000) / (now - lastStat))} fps · ${canvas.width}×${canvas.height} · ${p3 ? "P3" : "sRGB"}${work} · ${baked}`;
+		stats.textContent = `${Math.round((frames * 1000) / (now - lastStat))} fps · ${canvas.width}×${canvas.height} · ${p3 ? "P3" : "sRGB"}${work} · ${firstFrame} · ${baked}`;
 		frames = 0;
 		textWork.layout = [0, 0];
 		textWork.readout = [0, 0];

@@ -43,6 +43,11 @@ import Base from "../../layouts/Base.astro";
 		display: block;
 	}
 
+	/* An undrawn canvas is black. Keep it out of sight until the first frame. */
+	#hero:not(.ready) {
+		visibility: hidden;
+	}
+
 	.stage {
 		position: relative;
 		max-width: 64rem;
