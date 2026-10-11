@@ -1,0 +1,161 @@
+---
+import Base from "../../layouts/Base.astro";
+
+// Hero prototypes: a full-viewport tidal network driven by Seattle tide
+// predictions. Working page — under /design, so excluded from the sitemap.
+// The prototype code lives in src/prototypes/hero/.
+---
+
+<Base title="Hero prototypes — whoami">
+	<meta slot="head" name="robots" content="noindex" />
+
+	<canvas id="hero" aria-hidden="true"></canvas>
+
+	<main class="stage">
+		<p class="eyebrow" data-hero-text="small">Seattle tide · <span id="tide-readout">…</span></p>
+		<h1 data-hero-text="display">Christian Gaetano</h1>
+		<p class="lead" data-hero-text="lead">Engineer, occasional writer, persistent tinkerer.</p>
+	</main>
+
+	<div class="controls">
+		<div class="group" role="group" aria-label="Prototype">
+			<button type="button" data-variant="flats">A · Flats</button>
+			<button type="button" data-variant="filaments">B · Filaments</button>
+			<button type="button" data-variant="terrain">C · Terrain</button>
+			<button type="button" data-variant="chart">D · Chart</button>
+			<button type="button" data-variant="topo">E · Topo</button>
+		</div>
+		<div class="group" role="group" aria-label="Tide">
+			<button type="button" data-mode="live">Live</button>
+			<button type="button" data-mode="lapse">Time-lapse</button>
+			<button type="button" data-mode="scrub">Scrub</button>
+			<input id="tide-scrub" type="range" min="0" max="1" step="0.001" aria-label="Tide level" />
+		</div>
+		<div class="group" role="group" aria-label="Text treatment">
+			<label><input id="hero-canvas-text" type="checkbox" checked /> Canvas text</label>
+			<button type="button" data-text="split">Split</button>
+			<button type="button" data-text="island">Island</button>
+			<button type="button" data-text="hybrid">Hybrid</button>
+		</div>
+		<button type="button" id="hero-theme">Theme</button>
+		<span id="hero-stats"></span>
+	</div>
+
+	<script>
+		import "../../prototypes/hero/main";
+	</script>
+</Base>
+
+<style>
+	#hero {
+		position: fixed;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		display: block;
+	}
+
+	.stage {
+		position: relative;
+		max-width: 64rem;
+		margin-inline: auto;
+		padding: var(--space-8) var(--space-4) 0;
+	}
+
+	/* While the canvas draws the text, the real text stays in place for
+	   screen readers, selection and search, but is not painted. If the
+	   visitor has forced colours on, leave their text alone. */
+	.stage.on-canvas [data-hero-text] {
+		color: transparent;
+	}
+
+	.stage.on-canvas [data-hero-text]::selection {
+		color: transparent;
+	}
+
+	@media (forced-colors: active) {
+		.stage.on-canvas [data-hero-text] {
+			color: CanvasText;
+		}
+	}
+
+	.eyebrow,
+	.controls {
+		font-family: var(--font-ui);
+		font-variation-settings: var(--axes-ui);
+		font-size: var(--text-meta);
+		font-weight: 500;
+	}
+
+	.eyebrow {
+		color: var(--dim);
+		margin-block-end: var(--space-3);
+	}
+
+	h1 {
+		font-size: var(--text-display);
+		line-height: var(--leading-display);
+		margin-block-end: var(--space-4);
+	}
+
+	.lead {
+		font-size: var(--text-lead);
+		line-height: var(--leading-lead);
+		max-width: var(--measure-narrow);
+	}
+
+	.controls {
+		position: fixed;
+		inset: auto var(--space-3) var(--space-3) var(--space-3);
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2) var(--space-4);
+		align-items: center;
+		padding: var(--space-2) var(--space-3);
+		background: color-mix(in oklab, var(--ground) 86%, transparent);
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		backdrop-filter: blur(8px);
+	}
+
+	.group {
+		display: flex;
+		gap: var(--space-1);
+		align-items: center;
+	}
+
+	button {
+		padding: var(--space-1) var(--space-2);
+		border: 1px solid var(--rule-strong);
+		border-radius: var(--radius);
+		background: none;
+		color: var(--dim);
+		cursor: pointer;
+	}
+
+	button[aria-pressed="true"] {
+		color: var(--ground);
+		background: var(--accent);
+		border-color: var(--accent);
+	}
+
+	label {
+		display: flex;
+		gap: var(--space-1);
+		align-items: center;
+		color: var(--dim);
+		margin-inline-end: var(--space-1);
+	}
+
+	#tide-scrub {
+		width: 10rem;
+	}
+
+	#hero-stats {
+		color: var(--faint);
+		font-family: var(--font-code);
+		font-variation-settings: var(--axes-code);
+		font-size: var(--text-micro);
+		margin-inline-start: auto;
+	}
+</style>
