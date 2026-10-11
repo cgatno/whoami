@@ -29,7 +29,7 @@ if (!gl) {
 }
 
 // Use Display P3 for the canvas when the screen can show it, so the hero
-// colours can go beyond what the sRGB document palette reaches.
+// colors can go beyond sRGB.
 const p3 = "drawingBufferColorSpace" in gl && matchMedia("(color-gamut: p3)").matches;
 if (p3) gl.drawingBufferColorSpace = "display-p3";
 const { oklch, hex } = makeColors(p3);
@@ -37,7 +37,7 @@ const { oklch, hex } = makeColors(p3);
 // The hero has its own palette (the "canvas palette"), built out from
 // palette B's petrol hue with far more chroma, plus the magenta pop.
 const palettes: Record<"light" | "dark", Record<string, RGB>> = {
-	// Dark: luminous water on dark mud, the way the Stillaguamish flats glint.
+	// Dark: bright water on dark mud, like the Stillaguamish flats.
 	dark: {
 		cGround: hex("#0b1616"),
 		cFlat: oklch(0.25, 0.025, 185),
@@ -46,12 +46,12 @@ const palettes: Record<"light" | "dark", Record<string, RGB>> = {
 		cDeep: oklch(0.27, 0.055, 195),
 		cFoam: oklch(0.96, 0.05, 150),
 		cPop: oklch(0.7, 0.3, 338),
-		// Both light, so both read on dark; the split shows as a colour change.
+		// Both are light, so both read on dark. The split shows as a color change.
 		cInkLand: oklch(0.82, 0.17, 172),
 		cInkWater: hex("#e0edec"),
 		cInk: hex("#e0edec"),
 	},
-	// Light: dark water on pale marsh, the way the Nisqually delta reads.
+	// Light: dark water on pale marsh, like the Nisqually delta.
 	light: {
 		cGround: hex("#f3fbfb"),
 		cFlat: oklch(0.9, 0.025, 170),
@@ -122,7 +122,7 @@ function ensureBaked() {
 // ---- text drawn in the shader
 // The real text stays in the DOM (for screen readers, selection and search)
 // and is made transparent while the canvas draws the visible version. Each
-// word is rasterised at the exact position the browser laid it out.
+// word is rasterized at the exact position the browser laid it out.
 const stage = document.querySelector<HTMLElement>(".stage")!;
 const textEls = Array.from(document.querySelectorAll<HTMLElement>("[data-hero-text]"));
 const mask = document.createElement("canvas");
@@ -134,9 +134,9 @@ gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 // A second texture holds smooth blurs of the mask, which give the shader the
-// "zone around the text" and the island's shape. These are real Gaussian-like
-// blurs: reading a low mip level instead is only a few texels wide at these
-// radii and leaves visibly faceted edges.
+// "zone around the text" and the island's shape. These are real blurs. A low
+// mip level is only a few texels wide at these radii and leaves faceted
+// edges.
 gl.activeTexture(gl.TEXTURE3);
 gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -186,7 +186,7 @@ function drawTextMask() {
 	if (!canvas.clientWidth || !canvas.width) return;
 	textDirty = false;
 	const scale = canvas.width / canvas.clientWidth;
-	// Only the block the text occupies is rasterised and uploaded.
+	// Only the block the text occupies is rasterized and uploaded.
 	let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
 	for (const el of textEls) {
 		const r = el.getBoundingClientRect();
@@ -306,7 +306,7 @@ function resize() {
 const start = performance.now();
 let frames = 0;
 let lastStat = start;
-// Cost of re-rasterising the text mask since the last stats update.
+// Cost of re-rasterizing the text mask since the last stats update.
 let textMs = 0;
 let textDraws = 0;
 function draw(now: number) {

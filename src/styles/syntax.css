@@ -1,13 +1,13 @@
 /*
- * Syntax highlighting — Shiki's built-in `css-variables` theme, mapped onto
- * palette roles so code follows the active palette and theme with no extra
- * work. Astro prefixes the theme's variables with --astro-code-.
+ * Syntax highlighting. Shiki's built-in `css-variables` theme is mapped onto
+ * palette roles, so code follows the active palette and theme. Astro prefixes
+ * the theme's variables with --astro-code-.
  *
- * Near-monochrome by design: the accent marks keywords, the secondary marks
- * literals, and everything else stays in ink, dim and faint. Every role used
- * here is contrast-verified at 4.5:1 or better on --raise, the code surface.
+ * It's nearly monochrome: the accent marks keywords, the secondary marks
+ * literals, and the rest uses ink, dim and faint. Every role used here has
+ * at least 4.5:1 contrast on --raise, the code background.
  *
- * Note: <Code /> does not inherit markdown.shikiConfig, so both need
+ * <Code /> does not inherit markdown.shikiConfig, so both need
  * `css-variables` set for Markdown fences and components to match.
  */
 @layer tokens {

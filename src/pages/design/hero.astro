@@ -2,11 +2,11 @@
 import Base from "../../layouts/Base.astro";
 
 // Hero prototypes: a full-viewport tidal network driven by Seattle tide
-// predictions. Working page — under /design, so excluded from the sitemap.
-// The prototype code lives in src/prototypes/hero/.
+// predictions. It's a working page under /design, so it's excluded from the
+// sitemap. The prototype code lives in src/prototypes/hero/.
 ---
 
-<Base title="Hero prototypes — whoami">
+<Base title="Hero prototypes · whoami">
 	<meta slot="head" name="robots" content="noindex" />
 
 	<canvas id="hero" aria-hidden="true"></canvas>
@@ -14,7 +14,7 @@ import Base from "../../layouts/Base.astro";
 	<main class="stage">
 		<p class="eyebrow" data-hero-text="small">Seattle tide · <span id="tide-readout">…</span></p>
 		<h1 data-hero-text="display">Christian Gaetano</h1>
-		<p class="lead" data-hero-text="lead">Engineer, occasional writer, persistent tinkerer.</p>
+		<p class="lead" data-hero-text="lead">Software engineer &amp; dabbling designer.</p>
 	</main>
 
 	<div class="controls">
@@ -64,7 +64,7 @@ import Base from "../../layouts/Base.astro";
 
 	/* While the canvas draws the text, the real text stays in place for
 	   screen readers, selection and search, but is not painted. If the
-	   visitor has forced colours on, leave their text alone. */
+	   visitor has forced colors on, leave their text alone. */
 	.stage.on-canvas [data-hero-text] {
 		color: transparent;
 	}

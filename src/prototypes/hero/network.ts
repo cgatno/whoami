@@ -2,12 +2,12 @@
 // texture the shaders sample.
 //
 // Method: a shortest-path tree grown inland from the sea edge over a noisy
-// cost field. Every cell drains to the neighbour it was reached from, which
+// cost field. Every cell drains to the neighbor it was reached from, which
 // gives a pit-free drainage tree; counting upstream cells gives each channel
 // its size. This is the same shape real tidal rills make as they converge.
 //
 // Output texture (RGBA float), one texel per (cell / SCALE):
-//   R  distance to the nearest channel centreline, in cells
+//   R  distance to the nearest channel centerline, in cells
 //   G  that channel's upstream coordinate, 0 at the sea .. 1 at the far tips
 //   B  that channel's half-width, in cells (0 = no channel nearby)
 //   A  a random id per "stem", so pulses can travel along one channel
@@ -16,7 +16,7 @@
 export interface Tree {
 	GW: number;
 	GH: number;
-	/** Downstream neighbour of each cell (-1 at the sea). */
+	/** Downstream neighbor of each cell (-1 at the sea). */
 	parent: Int32Array;
 	/** Path cost from the sea; divide by maxCost for a 0..1 upstream coordinate. */
 	cost: Float32Array;
@@ -99,7 +99,7 @@ export function buildTree(seed = 11): Tree {
 	const done = new Uint8Array(N);
 	const order = new Int32Array(N);
 
-	// A few outlets along the shore start "cheaper", so neighbouring basins
+	// A few outlets along the shore start "cheaper", so neighboring basins
 	// funnel toward them and form larger trees.
 	const outlets = Array.from({ length: 4 }, () => rand() * GW);
 	const heapCost = new Float32Array(N * 8);

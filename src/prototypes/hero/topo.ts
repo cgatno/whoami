@@ -1,21 +1,21 @@
-// Bakes a watershed heightfield from the drainage tree: the channels become
+// Bakes a watershed heightfield from the drainage tree. The channels become
 // valley floors and the ground rises away from them into ridges.
 //
 // Height at any point is the lowest "valley floor + climb" over all nearby
-// valleys — a lower envelope. That surface always drains downhill to the
+// valleys (a lower envelope). That surface always drains downhill to the
 // sea along the tree, so thresholding it at the tide level behaves like a
 // flood fill: water spreads up the trunks first, then into each tributary,
 // without running a fill every frame.
 //
-// Valleys are flat-floored with steep banks, not V-shaped. Water in a V
-// pinches to a needle wherever it runs out; on a flat floor it keeps its
+// Valleys have flat floors and steep banks. In a V-shaped valley the water
+// pinches to a needle wherever it runs out. On a flat floor it keeps its
 // width and ends bluntly. Floor width grows with the valley's size, so
-// trunks are broad and side valleys narrow — which is what makes the
-// branching readable.
+// trunks are broad and side valleys narrow, and the branching is easy to
+// see.
 import { buildTree } from "./network";
 
 export interface HeightField {
-	/** One float per texel, normalised 0..1. */
+	/** One float per texel, normalized 0..1. */
 	data: Float32Array;
 	width: number;
 	height: number;
@@ -32,7 +32,7 @@ const REACH_TRUNK = 40; // cells a trunk valley's slopes extend
 const FLOOR_RISE = 48; // height gained along the tree, sea to furthest tip
 const BANK_WIDTH = 3.5; // cells of steep bank before the gentler hillside
 const BANK_SLOPE = 2.4;
-const MAX_HEIGHT = 112; // for normalising
+const MAX_HEIGHT = 112; // for normalizing
 
 export function generateHeight(seed = 11): HeightField {
 	const t0 = performance.now();
@@ -104,8 +104,8 @@ export function generateHeight(seed = 11): HeightField {
 		}
 	}
 
-	// Round off the bank edges and ridge lines so contours flow rather than
-	// kink. Kept light: a heavy blur erases the side valleys.
+	// Round off the bank edges and ridge lines so contours don't kink. Keep it
+	// light, because a heavy blur erases the side valleys.
 	const tmp = new Float32Array(W * H);
 	const blur = (src: Float32Array, dst: Float32Array, n: number, stride: number, lines: number, step: number) => {
 		const R = 2;

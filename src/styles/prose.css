@@ -1,10 +1,10 @@
 /*
- * Prose — long-form content (posts, Markdown output). Opt in with class="prose".
+ * Prose: long-form content (posts, Markdown output). Opt in with class="prose".
  *
- * Spacing is flow-based: only elements with a previous sibling get a top
- * margin, so the first and last children never push against their container.
- * :where() keeps every selector at the specificity of `.prose` alone, so
- * later rules (and components) override without escalation.
+ * Only elements with a previous sibling get a top margin, so the first and
+ * last children never push against their container. :where() keeps every
+ * selector at the specificity of `.prose` alone, so later rules and
+ * components can override it easily.
  */
 @layer components {
 	.prose {

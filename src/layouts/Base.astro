@@ -1,9 +1,6 @@
 ---
-// The document shell every page renders through. It owns the global CSS and
-// font loading, so pages never import either themselves.
-//
-// Imported first in each page so its CSS has the lowest precedence; with all
-// global CSS in cascade layers that is belt-and-braces rather than required.
+// The document shell for every page. It owns the global CSS and font
+// loading, so pages don't import either themselves.
 import { Font } from "astro:assets";
 import "../styles/global.css";
 
@@ -20,8 +17,8 @@ const { title, description } = Astro.props;
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		{/* Lets the browser paint the right canvas before any CSS arrives, so
-		    dark-mode visitors don't get a white flash. */}
+		{/* Tells the browser which color schemes to expect before any CSS
+		    arrives, so dark-mode visitors don't get a white flash. */}
 		<meta name="color-scheme" content="light dark" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
@@ -29,9 +26,9 @@ const { title, description } = Astro.props;
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
 
-		{/* Above-the-fold faces are preloaded. Newsreader is scoped to `normal`:
-		    a bare `preload` would pull the italic into the critical path too.
-		    Recursive isn't preloaded — code and chrome are rarely the LCP. */}
+		{/* Preload the faces used above the fold. Newsreader is limited to
+		    `normal` because a bare `preload` would also preload the italic.
+		    Recursive isn't preloaded since code and UI text are rarely the LCP. */}
 		<Font cssVariable="--font-familjen-grotesk" preload />
 		<Font cssVariable="--font-newsreader" preload={[{ style: "normal" }]} />
 		<Font cssVariable="--font-recursive" />

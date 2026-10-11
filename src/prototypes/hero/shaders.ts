@@ -1,5 +1,6 @@
-// Three takes on "a branching network that the tide floods and drains".
-// All are single full-screen fragment shaders sharing one set of uniforms.
+// Five takes on "a branching network that the tide floods and drains".
+// Each is a single full-screen fragment shader, and they share one set of
+// uniforms.
 
 export const VERT = /* glsl */ `#version 300 es
 void main() {
@@ -34,7 +35,7 @@ float vnoise(vec2 p) {
 	return mix(mix(hash21(i), hash21(i + vec2(1, 0)), u.x),
 	           mix(hash21(i + vec2(0, 1)), hash21(i + vec2(1, 1)), u.x), u.y);
 }
-// Gradient noise: zero-centred and free of the grid artefacts value noise
+// Gradient noise: zero-centered and free of the grid artifacts value noise
 // shows when stretched. Its zero-contours are long, smooth, wandering lines.
 float gnoise(vec2 p) {
 	vec2 i = floor(p), f = fract(p);
@@ -74,7 +75,7 @@ vec2 meander(vec2 uv) {
 	return uv + big * vec2(0.10, 0.07) + small * 0.028;
 }
 
-// A rare bright pulse travelling along one stem, upstream on a rising tide
+// A rare bright pulse traveling along one stem, upstream on a rising tide
 // and back toward the sea on a falling one.
 float pulse(float u, float stem, float t, float dir) {
 	float s = stem * 1000.0;
@@ -97,7 +98,7 @@ float specks(vec2 p, float t) {
 `;
 
 // ---------------------------------------------------------------------------
-// A — Flats. A top-down estuary: mudflat, carved rills, and water that fills
+// A: Flats. A top-down estuary: mudflat, carved rills, and water that fills
 // the channels first, then sheets across the flat.
 export const FRAG_FLATS = COMMON + /* glsl */ `
 void main() {
@@ -134,7 +135,7 @@ void main() {
 
 	float glint = fbm(p * 26.0 + vec2(uTime * 0.03, -uTime * 0.02));
 	// Vivid only in the shallows: open water goes deep and dark, so the
-	// colour traces the waterline and the channels.
+	// color traces the waterline and the channels.
 	vec3 wcol = mix(cWater, cDeep, smoothstep(0.0, 0.09, depth));
 	wcol += (glint - 0.5) * 0.07 * cFoam;
 
@@ -152,7 +153,7 @@ void main() {
 }`;
 
 // ---------------------------------------------------------------------------
-// B — Filaments. The same network with no land or water: fine lines that
+// B: Filaments. The same network with no land or water: fine lines that
 // light up as far as the tide reaches. Reads as roots, neurons or a delta.
 export const FRAG_FILAMENTS = COMMON + /* glsl */ `
 void main() {
@@ -189,10 +190,10 @@ void main() {
 }`;
 
 // ---------------------------------------------------------------------------
-// C — Terrain. No baked network. The ground is a plateau with V-shaped
+// C: Terrain. No baked network. The ground is a plateau with V-shaped
 // channels cut along the zero-contours of smooth noise, at three scales:
 // trunks, branches and rills. Each finer scale is shallower, so it floods
-// later — the hierarchy of a tidal network, straight from the ground shape.
+// later, the way a real tidal network does.
 export const FRAG_TERRAIN = COMMON + /* glsl */ `
 void main() {
 	vec2 s = gl_FragCoord.xy / uRes;
@@ -206,9 +207,9 @@ void main() {
 	vec2 warp = vec2(fbm(p * 1.6 + vec2(0.0, 1.7) + drift), fbm(p * 1.6 + vec2(5.2, 1.3) - drift)) - 0.5;
 	vec2 r = p + 0.55 * warp;
 
-	// Distance-like value to each channel centreline. Sampling is stretched
-	// toward the sea so the lines run like channels rather than closing
-	// into cells.
+	// Distance-like value to each channel centerline. Sampling is stretched
+	// toward the sea so the lines run like channels and don't close into
+	// cells.
 	float c1 = abs(gnoise(r * vec2(2.3, 0.95) + 11.0));
 	float c2 = abs(gnoise(r * vec2(5.6, 2.6) + 37.0));
 	float c3 = abs(gnoise(r * vec2(13.0, 6.5) + 71.0));
@@ -223,7 +224,7 @@ void main() {
 	float ground = min(PLATEAU, carve);
 	float e = ground + yIn * 0.30 + 0.03 * (fbm(p * 6.0) - 0.5);
 
-	// A slow wave travelling along the channels: water sloshing to and fro.
+	// A slow wave traveling along the channels: water sloshing to and fro.
 	float swash = 0.008 * sin(uTime * 0.4 - dir * yIn * 11.0 + warp.x * 9.0);
 	float L = mix(0.03, 0.29, uLevel) + swash;
 	float depth = L - e;
@@ -238,7 +239,7 @@ void main() {
 	flat_ = mix(flat_, cRill, 0.5 * dry);
 	flat_ = mix(flat_, cPop, 0.75 * specks(p * 190.0, uTime) * wet * (1.0 - water) * (1.0 - fade));
 
-	// Vivid only in the shallows, so colour traces the banks and the edge.
+	// Vivid only in the shallows, so color traces the banks and the edge.
 	float shallow = 1.0 - smoothstep(0.01, 0.085, depth);
 	vec3 wcol = mix(cDeep, cWater, shallow);
 	float glint = fbm(p * 24.0 + vec2(uTime * 0.03, -dir * uTime * 0.05));
@@ -261,8 +262,8 @@ void main() {
 }`;
 
 // ---------------------------------------------------------------------------
-// D — Chart. The same branching ground as Terrain, drawn flat like a
-// nautical chart or a screen print: stepped bands of flat colour, crisp
+// D: Chart. The same branching ground as Terrain, drawn flat like a
+// nautical chart or a screen print: stepped bands of flat color, crisp
 // edges, thin contour lines, and no glow or simulated lighting. The only
 // magenta is a single line marking where the next high or low will reach.
 export const FRAG_CHART = COMMON + /* glsl */ `
@@ -333,7 +334,7 @@ void main() {
 }`;
 
 // ---------------------------------------------------------------------------
-// E — Topo. The whole view is one watershed, drawn as a topographic map:
+// E: Topo. The whole view is one watershed, drawn as a topographic map:
 // contour lines everywhere, and everything below the tide level filled in
 // flat bands. The terrain drains to the sea along a branching valley
 // network, so rising water spreads up the trunks and then the tributaries.
@@ -342,7 +343,7 @@ uniform sampler2D uHeight;
 uniform vec2 uHeightSize;
 uniform float uNext;   // level of the next high or low, 0..1
 
-// The page's text, rasterised into a mask: R = the name, B = the tagline,
+// The page's text, rasterized into a mask: R = the name, B = the tagline,
 // G = small text.
 uniform sampler2D uText;
 // Smooth blurs of that mask, covering the same rectangle: R = all text,
@@ -399,7 +400,7 @@ void main() {
 	vec2 f = rot * c * ZOOM + vec2(0.5 * uFieldAspect, 0.50);
 	float dir = uRate >= 0.0 ? 1.0 : -1.0;
 
-	// A soft zone around the text where the map quietens so letters stay
+	// A soft zone around the text where the map calms down so letters stay
 	// readable: 0 away from text, 1 right around it.
 	vec2 tp = (vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y) - uTextRect.xy) / uTextRect.zw;
 	bool inText = uTextOn > 0.5 && tp.x >= 0.0 && tp.x <= 1.0 && tp.y >= 0.0 && tp.y <= 1.0;
@@ -417,7 +418,7 @@ void main() {
 	vec2 uv = vec2(f.x / uFieldAspect, f.y);
 	float h = heightAt(uv);
 	// Near text, use a smoothed copy of the ground, so the waterline crosses
-	// the letters as one clean curve rather than a string of small notches.
+	// the letters as one clean curve instead of a string of small notches.
 	if (calm > 0.0) {
 		vec2 r = vec2(0.022 / uFieldAspect, 0.022);
 		vec2 d = 1.5 * r;                                  // a second, wider ring
@@ -447,9 +448,8 @@ void main() {
 		float core = smoothstep(0.012, 0.06, all ? blur.r : blur.b);
 		island = 1.0 - (1.0 - shore) * (1.0 - core);     // smooth union: no crease
 	}
-	// Lift the ground rather than replace it with a plateau, so the island
-	// keeps the map's own hills. The lift exceeds the highest tide, so text
-	// is dry whatever is under it.
+	// Lift the existing ground, so the island keeps the map's own hills. The
+	// lift exceeds the highest tide, so text is dry whatever is under it.
 	h += (toL(1.0) + 0.05) * island;
 
 	// ...the water's edge laps in and out, out of step from place to place...
@@ -481,7 +481,7 @@ void main() {
 	// a lighter patch around letters over deep water, which read as a glow.)
 	float steps = clamp(floor(depth / (STEP * 2.0)), 0.0, 3.0) / 3.0;
 	vec3 wcol = mix(mid, cDeep, steps);
-	// No keyline near text: it is the same colour as the dark theme's
+	// No keyline near text: it is the same color as the dark theme's
 	// on-land ink, and letters blur into it.
 	float edge = (1.0 - smoothstep(2.5 * aa, 3.5 * aa, depth)) * lively;
 	wcol = mix(wcol, cDeep, 0.35 * line * (1.0 - edge));              // submerged contours
@@ -500,28 +500,28 @@ void main() {
 	// pass through the "extreme high" heights without a tide ever reaching them.
 	float hiZone = smoothstep(toL(0.9), toL(1.0), ground) * (1.0 - smoothstep(toL(1.0), toL(1.0) + 0.012, ground));
 	float loZone = (1.0 - smoothstep(toL(0.0), toL(0.1), ground)) * smoothstep(toL(0.0) - 0.012, toL(0.0), ground);
-	// Stepped into three flat tints, like the water bands, rather than left
-	// as a soft blur: a glow would break the flat, printed look.
+	// Stepped into three flat tints like the water bands. A soft blur reads
+	// as a glow, which breaks the flat look.
 	float zone = max(hiZone, loZone) * 3.0;
 	float w = fwidth(zone);
 	float stepped = (floor(zone) + smoothstep(0.5 - w, 0.5 + w, fract(zone))) / 3.0;
-	// Emphasis follows the tide's rate, not just its direction. The rate
-	// eases through zero at every turn of the tide, so the two zones are
-	// equal at the turn and crossfade either side of it, with no jump.
+	// Emphasis follows the tide's rate. The rate eases through zero at
+	// every turn of the tide, so the two zones are equal at the turn and
+	// crossfade either side of it with no jump.
 	float rising = 0.5 + 0.5 * uRate;
 	float toward = hiZone > loZone ? rising : 1.0 - rising;
 	// None on an island or near any text: a magenta band across a word is
-	// one more colour for the letters to sit on.
+	// one more color for the letters to sit on.
 	float tint = stepped * mix(0.22, 0.46, toward) * (1.0 - island) * lively;
 	col = mix(col, cPop, tint);
 	under = mix(under, cPop, tint);
 
 	// Text. Display text takes one ink over water and another over dry
 	// land, so letters split exactly along the waterline. Each theme's pair
-	// is checked against every flat colour it can sit on (worst case 4.65:1
-	// dark, 5.97:1 light). Choosing by region rather than by per-pixel
-	// contrast matters in dark mode, where land and water are both dark: a
-	// contrast test would never flip there except on the keyline.
+	// is checked against every flat color it can sit on (worst case 4.65:1
+	// dark, 5.97:1 light). The ink is chosen by region. A per-pixel contrast
+	// test doesn't work in dark mode, where land and water are both dark: it
+	// would only flip on the keyline.
 	if (inText) {
 		vec4 m = texture(uText, tp);
 		vec3 split = mix(cInkLand, cInkWater, water);

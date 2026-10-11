@@ -1,5 +1,5 @@
-// Colours for the canvas, as gamma-encoded RGB triples in the canvas's own
-// colour space (Display P3 when available, sRGB otherwise). Same OKLab maths
+// Colors for the canvas, as gamma-encoded RGB triples in the canvas's own
+// color space (Display P3 when available, sRGB otherwise). Same OKLab math
 // as scripts/palettes.mjs.
 
 export type RGB = [number, number, number];
@@ -37,7 +37,7 @@ const inGamut = (v: number[]) => v.every((x) => x >= -1e-4 && x <= 1 + 1e-4);
 export function makeColors(p3: boolean) {
 	const toTarget = (linSrgb: number[]) => (p3 ? mul(XYZ_P3, mul(SRGB_XYZ, linSrgb)) : linSrgb);
 
-	/** OKLCH colour, with chroma eased down until it fits the target gamut. */
+	/** OKLCH color, with chroma eased down until it fits the target gamut. */
 	const oklch = (L: number, C: number, hueDeg: number): RGB => {
 		const h = (hueDeg * Math.PI) / 180;
 		let out = [0, 0, 0];
@@ -49,7 +49,7 @@ export function makeColors(p3: boolean) {
 		return out.map(encode) as RGB;
 	};
 
-	/** An sRGB hex colour, reproduced exactly in the target space. */
+	/** An sRGB hex color, reproduced exactly in the target space. */
 	const hex = (h: string): RGB => {
 		const lin = [1, 3, 5].map((i) => toLinear(parseInt(h.slice(i, i + 2), 16) / 255));
 		return toTarget(lin).map(encode) as RGB;

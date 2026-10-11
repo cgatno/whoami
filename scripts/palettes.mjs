@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 /**
- * Generate src/styles/palette.css and verify every colour pairing.
+ * Generates src/styles/palette.css and checks the contrast of every color
+ * pairing.
  *
  * Run with `npm run palettes`. No dependencies.
  *
- * Each palette is two source hues (accent, secondary). Everything else is
- * derived in OKLab: neutrals take the accent hue at low chroma, text tones are
- * solved for contrast against --raise (the stricter surface in both themes),
- * and P3 overrides are emitted only where P3 can show what sRGB cannot.
+ * Each palette starts from two hues (accent, secondary). The rest is derived
+ * in OKLab: neutrals take the accent hue at low chroma, and text tones are
+ * solved for contrast against --raise, the stricter surface in both themes.
+ * P3 overrides are added only where the boosted color falls outside sRGB.
  *
- * All three candidates are derived and checked; only ACTIVE is written, as
+ * All three candidates are derived and checked. Only ACTIVE is written, as
  * light-dark() pairs inside the `tokens` cascade layer.
  *
  * If any WCAG check fails, nothing is written and the script exits 1.
@@ -29,7 +30,7 @@ const SRC = {
 };
 const NAMES = { a: "Ink & Ember", b: "Petrol & Ochre", c: "Oxblood & Slate" };
 
-// The palette that ships. Switching is a one-line change here.
+// The palette that gets written.
 const ACTIVE = "b";
 
 // Neutral roles as [OKLab lightness, chroma], all at the accent hue.
@@ -53,10 +54,10 @@ const CHECKS = [
 	["rule-strong", 3.0, "raise", "control border on card"],
 ];
 
-// ---- colour maths -----------------------------------------------------------
+// ---- color math -------------------------------------------------------------
 
-// Round half to even, matching the Python original, so hex output can't drift
-// on an exact .5 (Math.round always rounds halves up).
+// Round half to even, like the Python version this was ported from, so the
+// hex output matches on an exact .5 (Math.round rounds halves up).
 const roundEven = (x) => {
 	const r = Math.round(x);
 	return Math.abs(x % 1) === 0.5 && r % 2 !== 0 ? r - 1 : r;
@@ -105,7 +106,7 @@ function lch(h) {
 
 const inGamut = (v) => v.every((x) => x >= -1e-4 && x <= 1 + 1e-4);
 
-/** Colour at OKLCH (L, C, h), easing chroma down until it fits sRGB. */
+/** Color at OKLCH (L, C, h), with chroma reduced until it fits sRGB. */
 function mk(L, C, h) {
 	let c;
 	for (let i = 0; i < 40; i++) {
@@ -124,9 +125,8 @@ const cr = (a, b) => {
 };
 
 /**
- * The L closest to `bg` that still clears `target`. Walks away from the
- * surface rather than assuming contrast rises with L, which is false on a
- * light ground.
+ * The L closest to `bg` that still clears `target`. It searches outward from
+ * the surface, since on a light ground contrast goes up as L goes down.
  */
 function solveL(C, h, bg, target, lo, hi) {
 	const light = Y(bg) > 0.18;
@@ -153,7 +153,7 @@ const mul = (M, v) => M.map((row) => row.reduce((sum, k, j) => sum + k * v[j], 0
 const toP3 = (lin) => mul(XYZ_P3, mul(SRGB_XYZ, lin));
 const p3Y = (p) => 0.2289746 * p[0] + 0.6917385 * p[1] + 0.0792869 * p[2];
 
-/** Chroma multiplier at which the colour leaves the given gamut. */
+/** Chroma multiplier at which the color leaves the given gamut. */
 function edge(lin, space) {
 	const [L, a, b] = toLab(lin);
 	let lo = 0.2;
@@ -210,8 +210,9 @@ for (const [k, [acc, sec]] of Object.entries(SRC)) {
 			mode === "light" ? `[data-palette="${k}"]` : `[data-palette="${k}"][data-theme="dark"]`;
 		out.push({ mode, sel, k, rows });
 
-		// P3 only where it adds >10% room at this hue AND the x1.20 boost
-		// actually leaves sRGB; otherwise it would be a restyle, not fidelity.
+		// Use P3 only where it has >10% more room at this hue and the x1.20 boost
+		// lands outside sRGB. Otherwise the override would just be a different
+		// color that sRGB could show too.
 		for (const role of ["accent", "secondary"]) {
 			const lin = rows[role];
 			const se = edge(lin, "srgb");
@@ -241,26 +242,24 @@ if (fails.length) {
 // ---- emit -------------------------------------------------------------------
 
 const HEADER = `/*
- * Palette ${ACTIVE.toUpperCase()} — ${NAMES[ACTIVE]}. Near-monochrome base, one intense pop.
+ * Palette ${ACTIVE.toUpperCase()}: ${NAMES[ACTIVE]}.
  *
  * Every token is a light-dark() pair. \`color-scheme\` on :root picks the side:
- * the OS preference by default, overridable via [data-theme] (see tokens.css).
+ * the OS preference by default, or [data-theme] to force one (see tokens.css).
  *
- * Neutrals are not grey: every ground, rule and text tone carries a real
- * amount of the accent hue, which is what makes a palette read as one
- * material (the Gruvbox move). The accent is the only saturated colour in
- * the document; --secondary is held back for rare use and for the hero.
+ * The neutrals are tinted with the accent hue so the whole palette feels like
+ * one material, the way Gruvbox does it. The accent is the only saturated
+ * color in the document. --secondary is for rare use and for the hero.
  *
- * --faint is TEXT (12px eyebrows, tags, years) and must clear 4.5:1. All
- * derived tones are solved against --raise, the stricter of the two surfaces,
- * so they hold on cards and code blocks as well as on the page.
+ * --faint is used for text (12px eyebrows, tags, years), so it has to clear
+ * 4.5:1. All derived tones are solved against --raise, the stricter of the
+ * two surfaces, so they also pass on cards and code blocks.
  *
- * --rule is a decorative divider and is deliberately exempt from 1.4.11.
+ * --rule is a decorative divider and is exempt from WCAG 1.4.11.
  * --rule-strong is for borders on interactive controls and clears 3:1.
  *
  * GENERATED by scripts/palettes.mjs (\`npm run palettes\`), which also runs the
- * contrast checks for all three candidate palettes. Edit the script, not this
- * file.
+ * contrast checks for all three candidate palettes. Edit the script.
  */`;
 
 const light = out.find((o) => o.k === ACTIVE && o.mode === "light").rows;
@@ -271,12 +270,12 @@ const tokens = Object.keys(light)
 	.map((r) => `\t\t--${r}: ${pair(r)};\n`)
 	.join("");
 
-// P3: override a role on whichever side(s) earned it; keep sRGB on the other.
+// P3: override a role on whichever side(s) qualified and keep sRGB on the other.
 const p3 = {};
 for (const e of p3L.filter((e) => e.k === ACTIVE)) (p3[e.role] ??= {}).light = e;
 for (const e of p3D.filter((e) => e.k === ACTIVE)) (p3[e.role] ??= {}).dark = e;
 const note = (side, e) =>
-	`${side} sRGB edge x${e.se.toFixed(2)}, P3 reaches x${e.pe.toFixed(2)} — ${e.ct.toFixed(2)}:1`;
+	`${side} sRGB edge x${e.se.toFixed(2)}, P3 reaches x${e.pe.toFixed(2)}, contrast ${e.ct.toFixed(2)}:1`;
 const p3Tokens = Object.entries(p3)
 	.map(([r, { light: l, dark: d }]) => {
 		const notes = [l && note("light", l), d && note("dark", d)].filter(Boolean).join("; ");
@@ -289,9 +288,10 @@ const p3Section = p3Tokens
 	? `
 
 	/*
-	 * Display P3, only where it shows what sRGB physically cannot: same OKLab
-	 * lightness and hue, chroma x1.20. The sRGB value is a deliberate sibling,
-	 * not a degraded copy. Contrast verified in P3 space via XYZ luminance.
+	 * Display P3 overrides, used only where the boosted color falls outside
+	 * sRGB: same OKLab lightness and hue, chroma x1.20. The sRGB values above
+	 * are chosen separately and aren't clipped copies of these. Contrast is
+	 * checked in P3 via XYZ luminance.
 	 */
 	@media (color-gamut: p3) {
 		:root {

@@ -1,6 +1,6 @@
 /*
- * Base — element defaults. Bare element selectors only, so anything more
- * specific (or any later layer, or any component) can override them.
+ * Base: element defaults. Only bare element selectors, so anything more
+ * specific, any later layer, or any component can override them.
  */
 @layer base {
 	body {

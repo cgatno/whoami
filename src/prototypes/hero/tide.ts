@@ -1,17 +1,17 @@
 // Tide state for Seattle from a baked snapshot of NOAA hi/lo predictions.
 // PROTOTYPE: the snapshot is a static file fetched by hand. The real version
-// should fetch at build time (see the hero notes in docs/inspiration.md).
+// should fetch at build time.
 import data from "./tides-seattle.json";
 
 export interface TideState {
 	/** Height in feet above MLLW. */
 	height: number;
-	/** Height normalised to 0..1 across the snapshot's full range. */
+	/** Height normalized to 0..1 across the snapshot's full range. */
 	level: number;
 	/** -1..1: positive while rising, strongest mid-tide, zero at the turn. */
 	rate: number;
 	next: { time: Date; height: number; type: "high" | "low" };
-	/** The next extreme's height, normalised like `level`. */
+	/** The next extreme's height, normalized like `level`. */
 	nextLevel: number;
 	/** False when the date is outside the snapshot and a rough model is used. */
 	fromData: boolean;
@@ -53,8 +53,8 @@ export function tideAt(date: Date): TideState {
 	};
 }
 
-// Outside the snapshot: two constituents (M2 + K1) around the mean. Not
-// accurate, just enough that the visual never stops moving.
+// Outside the snapshot: two constituents (M2 + K1) around the mean. It isn't
+// accurate, but it keeps the visual moving.
 function approximate(date: Date): TideState {
 	const hours = date.getTime() / 3600000;
 	const mean = (data.max + data.min) / 2;

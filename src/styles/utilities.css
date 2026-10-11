@@ -1,7 +1,7 @@
 /*
- * Utilities — single-purpose classes. The highest layer, but still below
- * unlayered Astro component styles: a utility on an element a component
- * styles the same property for will lose to the component.
+ * Utilities: single-purpose classes. This is the highest layer, but it is
+ * still below unlayered Astro component styles. If a component styles the
+ * same property on an element, the component wins.
  */
 @layer utilities {
 	/* Vertical rhythm for any stack of siblings. Override per-instance with

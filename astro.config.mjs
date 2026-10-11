@@ -6,38 +6,33 @@ import sitemap from "@astrojs/sitemap";
 
 // https://astro.build/config
 export default defineConfig({
-  // TEMPORARY, until DNS moves off Netlify.
+  // Temporary, until DNS moves off Netlify.
   //
-  // This is deliberately the workers.dev origin and not christiangaetano.com.
-  // `site` drives canonical URLs, so pointing it at production while the
-  // deployment also serves `X-Robots-Tag: noindex` would send Google two
-  // contradictory signals about the same page — and risks the noindex being
-  // consolidated onto the canonical target, i.e. deindexing the live site.
-  // Self-referential canonical + noindex agree with each other and implicate
-  // no other domain.
+  // `site` sets canonical URLs, and this deployment sends
+  // `X-Robots-Tag: noindex`. If `site` pointed at christiangaetano.com,
+  // Google could apply the noindex to the live site. Keeping it on the
+  // workers.dev origin avoids that.
   //
   // At cutover: change this to https://christiangaetano.com and set
   // `workers_dev: false` in wrangler.jsonc.
   site: "https://whoami.cgatno.workers.dev",
   adapter: cloudflare(),
-  // All CSS is ~2 KB gzipped, so inlining keeps first paint to one round trip
-  // (homepage: 2.9 KB gz total) at the cost of not caching it across pages.
-  // Revisit if the CSS grows well past that.
+  // All CSS is ~2 KB gzipped, so it's inlined to save a request (homepage:
+  // 2.9 KB gz total). It isn't cached across pages. Revisit if the CSS grows.
   build: { inlineStylesheets: "always" },
   integrations: [
-    // Path-matched rather than compared against a full URL, so it survives
-    // the `site` change at cutover.
+    // Matches on the path so it still works after `site` changes at cutover.
     sitemap({ filter: (page) => !new URL(page).pathname.startsWith("/design") }),
   ],
-  // Colours come from src/styles/syntax.css, mapped onto palette roles.
-  // <Code /> doesn't inherit this, so pass theme="css-variables" there too.
+  // Colors come from src/styles/syntax.css. <Code /> doesn't inherit this,
+  // so pass theme="css-variables" there too.
   markdown: {
     shikiConfig: { theme: "css-variables" },
   },
   // Familjen Grotesk (headings), Newsreader (body), Recursive (code + UI).
-  // Sizes are measured latin woff2. Google serves one file per axis
-  // combination: narrowing a range never shrinks it — only dropping an axis,
-  // or pinning it to a single value, does.
+  // Sizes are measured latin woff2. Google serves one file per combination
+  // of axes, so only dropping an axis or pinning it to one value makes a
+  // file smaller. Narrowing a range does nothing.
   fonts: [
     // 18.4 KB. wght is the only axis on this family.
     {
@@ -50,9 +45,9 @@ export default defineConfig({
       fallbacks: ["sans-serif"],
     },
 
-    // 56.8 KB. opsz pinned to body size rather than ranged: the 6..72 range
-    // costs 128.8 KB for optical sizes we never render. Retune if body size
-    // changes materially.
+    // 56.8 KB. opsz is pinned to the body size. The full 6..72 range costs
+    // 128.8 KB for optical sizes the site never uses. Retune if the body
+    // size changes much.
     {
       provider: fontProviders.google(),
       name: "Newsreader",
@@ -64,8 +59,9 @@ export default defineConfig({
       options: { experimental: { variableAxis: { opsz: ["16"] } } },
     },
 
-    // 23.8 KB. Separate entry so weight can pin to 400 while roman keeps its
-    // range; the italic range is 61.7 KB. Trade-off: no bold italic.
+    // 23.8 KB. Separate entry so the italic can pin to weight 400 while
+    // roman keeps its range. The italic range is 61.7 KB. Trade-off: no
+    // bold italic.
     {
       provider: fontProviders.google(),
       name: "Newsreader",
@@ -77,9 +73,9 @@ export default defineConfig({
       options: { experimental: { variableAxis: { opsz: ["16"] } } },
     },
 
-    // 70.6 KB. MONO is ranged, not pinned: 0 is a proportional sans for UI
-    // chrome, 1 a true monospace for code, both from this one file for 17.1 KB
-    // over pinning. MONO defaults to 0 — removing it turns code blocks to sans.
+    // 70.6 KB. MONO is a range: 0 is a proportional sans for UI text and 1
+    // is a monospace for code. One file covers both for 17.1 KB more than
+    // pinning. MONO defaults to 0, so removing it turns code blocks to sans.
     {
       provider: fontProviders.google(),
       name: "Recursive",

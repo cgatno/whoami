@@ -1,16 +1,17 @@
 /*
  * Design tokens: type, spacing, measure, font roles, and the theme switch.
- * Colour tokens live in palette.css (generated); syntax colours in syntax.css.
+ * Color tokens are in palette.css (generated) and syntax colors are in
+ * syntax.css.
  *
- * Type steps are named by ROLE, not by size, so adding a new element means
- * assigning it a role rather than inventing a number.
+ * Type steps are named by role. A new element gets one of the existing
+ * roles.
  *
- * Each step is tied to one face, and the px values already carry that face's
+ * Each step belongs to one face, and its px value includes that face's
  * optical correction. The three families have very different x-heights
- * (Familjen 0.500, Newsreader 0.426, Recursive 0.532), so equal px does NOT
- * mean equal apparent size: Newsreader needs ~+17.5% and Recursive ~-6% to
- * match Familjen. Do not "tidy" these into a uniform ratio — the ladder is
- * monotonic in x-height, which is what the eye reads, not in px.
+ * (Familjen 0.500, Newsreader 0.426, Recursive 0.532), so equal px sizes
+ * don't look equal: Newsreader needs about +17.5% and Recursive about -6%
+ * to match Familjen. The steps increase in x-height, which is what the eye
+ * reads, so don't even them out into a uniform px ratio.
  */
 
 @layer tokens {
@@ -23,14 +24,14 @@
 		--text-small: 1rem; /*     16   Newsreader          6.82px  captions, notes  */
 		--text-body: 1.25rem; /*  20   Newsreader          8.52px  running text     */
 		--text-sub: 1.375rem; /*  22   Familjen           11.00px  sub-heading      */
-		--text-lead: 1.5rem; /*   24   Newsreader         10.22px  standfirst       */
+		--text-lead: 1.5rem; /*   24   Newsreader         10.22px  intro paragraph  */
 		--text-section: 1.75rem; /* 28  Familjen           14.00px  section heading */
 		--text-title: 2.5rem; /*  40   Familjen           20.00px  page/post title  */
 		--text-display: 4.5rem; /* 72   Familjen           36.00px  landing hero    */
 
 		/* ---- Line heights ----
-		 * Unitless so they inherit correctly. Body is the anchor: 20px x 1.6 = 32px,
-		 * which is what sets the spacing base unit below.
+		 * Unitless so they inherit correctly. Body is 20px x 1.6 = 32px, which the
+		 * spacing unit below is based on.
 		 */
 		--leading-display: 1;
 		--leading-title: 1.1;
@@ -39,10 +40,9 @@
 		--leading-body: 1.6;
 
 		/* ---- Spacing ---------------------------------------------------------
-		 * Base unit is 8px, derived from the 32px body line box (4 x 8), so
-		 * vertical rhythm and the spacing scale share one foundation.
-		 * Fine gradations at the bottom for prose, coarse jumps at the top for
-		 * landing-page sections.
+		 * The base unit is 8px, a quarter of the 32px body line, so spacing and
+		 * vertical rhythm line up. The small steps at the bottom are for prose
+		 * and the big ones at the top are for landing-page sections.
 		 */
 		--space-1: 0.25rem; /*   4px  - 0.5u */
 		--space-2: 0.5rem; /*    8px  - 1u   */
@@ -55,22 +55,22 @@
 		--space-9: 8rem; /*    128px  - 16u  */
 
 		/* ---- Measure ----
-		 * 35rem at 20px Newsreader is ~66 characters, measured from the font's
-		 * real average advance (0.4214 em) rather than the `ch` approximation.
+		 * 35rem at 20px Newsreader is about 66 characters, measured from the
+		 * font's average advance (0.4214 em) instead of `ch`.
 		 */
 		--measure: 35rem;
 		--measure-narrow: 28rem;
 	}
 
 	/* ---- Theme -------------------------------------------------------------
-	 * palette.css declares every colour as light-dark(). color-scheme decides
-	 * which side applies: the OS preference by default, or a forced choice via
+	 * palette.css declares every color as light-dark(). color-scheme picks
+	 * the side: the OS preference by default, or a forced choice via
 	 * [data-theme] on <html>.
 	 *
-	 * Theme is PAGE-LEVEL only. Vite's default target predates light-dark(),
-	 * so the build (Lightning CSS) lowers it to a fallback that resolves the
-	 * tokens once, at :root. Forcing color-scheme on a subtree will not
-	 * re-theme them. Raising the build target removes the lowering.
+	 * Theming only works for the whole page. Vite's default target predates
+	 * light-dark(), so Lightning CSS lowers it at build time to a fallback
+	 * that resolves the tokens once, at :root. Setting color-scheme on a
+	 * subtree won't re-theme them. Raising the build target would fix that.
 	 */
 	:root {
 		color-scheme: light dark;
@@ -85,12 +85,13 @@
 	}
 
 	/* ---- Font roles ----------------------------------------------------------
-	 * Components reference roles, never families. The --font-* family
-	 * variables (with metric-matched fallbacks) come from Astro's <Font />.
+	 * Components use these roles and never the family variables directly.
+	 * The --font-* family variables (with metric-matched fallbacks) come
+	 * from Astro's <Font />.
 	 *
-	 * Recursive serves two roles from one file via its MONO axis. Pair
-	 * --font-ui with --axes-ui and --font-code with --axes-code: MONO must be
-	 * set explicitly because font-variation-settings inherits.
+	 * Recursive covers two roles from one file through its MONO axis. Pair
+	 * --font-ui with --axes-ui and --font-code with --axes-code. MONO has to
+	 * be set explicitly because font-variation-settings inherits.
 	 */
 	:root {
 		--font-heading: var(--font-familjen-grotesk);

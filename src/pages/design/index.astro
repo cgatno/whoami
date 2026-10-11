@@ -2,9 +2,9 @@
 import Base from "../../layouts/Base.astro";
 import paletteCss from "../../styles/palette.css?raw";
 
-// Working design page: the reference. Not linked from anywhere, excluded from
-// the sitemap. Specimens set only family, weight and size; everything else
-// comes from the global layers, so this page shows what actually ships.
+// Working design page: the reference. It isn't linked from anywhere and is
+// excluded from the sitemap. Specimens only set family, weight and size.
+// Everything else comes from the global layers, so this page shows what ships.
 
 const familjenWeights = [400, 500, 600, 700];
 const newsreaderWeights = [200, 300, 400, 500, 600, 700, 800];
@@ -18,7 +18,7 @@ const scale = [
 	["--text-small", 16, "Newsreader", "body", 6.82, "captions, footnotes"],
 	["--text-body", 20, "Newsreader", "body", 8.52, "running text"],
 	["--text-sub", 22, "Familjen Grotesk", "heading", 11.0, "sub-heading"],
-	["--text-lead", 24, "Newsreader", "body", 10.22, "standfirst"],
+	["--text-lead", 24, "Newsreader", "body", 10.22, "intro paragraph"],
 	["--text-section", 28, "Familjen Grotesk", "heading", 14.0, "section heading"],
 	["--text-title", 40, "Familjen Grotesk", "heading", 20.0, "page / post title"],
 	["--text-display", 72, "Familjen Grotesk", "heading", 36.0, "landing hero"],
@@ -30,35 +30,34 @@ const spacing = [
 	["--space-9", 128],
 ];
 
-// Read the sRGB pairs straight from the generated file, so the swatch labels
-// can never drift from what ships.
+// Read the sRGB pairs from the generated file so the swatch labels always
+// match what ships.
 const tokens = [...paletteCss.matchAll(/--([\w-]+): light-dark\((#[0-9a-f]{6}), (#[0-9a-f]{6})\)/g)]
 	.map(([, name, light, dark]) => ({ name, light, dark }));
 const hex = (scheme: "light" | "dark", name: string) =>
 	tokens.find((t) => t.name === name)![scheme];
 ---
 
-<Base title="Design — whoami">
+<Base title="Design · whoami">
 	<meta slot="head" name="robots" content="noindex" />
 
 	<main class="page flow">
-		<p class="label">whoami — working design page</p>
+		<p class="label">whoami · working design page</p>
 		<h1>Design</h1>
 		<p class="note">
-			The reference: every value here comes from the real fonts, tokens and
-			global layers, so what you see is what ships. <a href="/design/preview"
-				>The composition preview</a
-			> shows the same rules applied to a post, a landing page and interface
-			elements.
+			Every value here comes from the real fonts and tokens, so this page
+			shows what ships.
+			<a href="/design/preview">The composition preview</a> uses them in a
+			sample post, a landing page and some UI pieces.
 		</p>
 
 		<section class="flow">
-			<h2>Colour</h2>
+			<h2>Color</h2>
 			<p class="note">
 				Palette B, Petrol &amp; Ochre, in both themes. Each token is a
 				<code>light-dark()</code> pair in <code>palette.css</code>, which
-				<code>npm run palettes</code> generates and contrast-checks; these values
-				are read straight from that file.
+				<code>npm run palettes</code> generates and contrast-checks. These
+				values are read from that file.
 			</p>
 			<div class="themes">
 				{
@@ -89,7 +88,7 @@ const hex = (scheme: "light" | "dark", name: string) =>
 		</section>
 
 		<section class="flow">
-			<h2>Familjen Grotesk — headings</h2>
+			<h2>Familjen Grotesk (headings)</h2>
 			<p class="note">Variable weight 400–700. No optical size axis on this family.</p>
 			<div>
 				{
@@ -106,11 +105,10 @@ const hex = (scheme: "light" | "dark", name: string) =>
 		</section>
 
 		<section class="flow">
-			<h2>Newsreader — body</h2>
+			<h2>Newsreader (body)</h2>
 			<p class="note">
 				Variable weight 200–800, optical size pinned at 16. Italic is a separate
-				file pinned to weight 400, so bold italic will be synthesised rather than
-				drawn.
+				file pinned to weight 400, so bold italic is synthesized by the browser.
 			</p>
 			<div>
 				{
@@ -137,14 +135,14 @@ const hex = (scheme: "light" | "dark", name: string) =>
 		</section>
 
 		<section class="flow">
-			<h2>Recursive — two registers, one file</h2>
+			<h2>Recursive (code and UI, one file)</h2>
 			<p class="note">
 				Variable weight 300–1000 with MONO ranged 0–1. MONO 0 is a proportional
-				sans for interface chrome (<code>--font-ui</code>); MONO 1 is a true
-				monospace for code (<code>--font-code</code>). Character widths stay
-				constant across weights, so changing weight never reflows text.
+				sans for UI chrome (<code>--font-ui</code>) and MONO 1 is a monospace
+				for code (<code>--font-code</code>). Character widths stay the same
+				across weights, so changing weight doesn't reflow text.
 			</p>
-			<p class="label">MONO 0 — interface chrome</p>
+			<p class="label">MONO 0 · UI chrome</p>
 			<div>
 				{
 					recursiveWeights.map((w) => (
@@ -157,7 +155,7 @@ const hex = (scheme: "light" | "dark", name: string) =>
 					))
 				}
 			</div>
-			<p class="label">MONO 1 — code</p>
+			<p class="label">MONO 1 · code</p>
 			<div>
 				{
 					recursiveWeights.map((w) => (
@@ -175,10 +173,10 @@ const hex = (scheme: "light" | "dark", name: string) =>
 		<section class="flow">
 			<h2>Type scale</h2>
 			<p class="note">
-				Named by role, not size. Each step carries its face's optical correction,
-				so the ladder is monotonic in apparent x-height even where the px values
-				invert — <code>--text-sub</code> at 22px looks larger than
-				<code>--text-lead</code> at 24px, because Familjen's x-height is so much
+				Steps are named by role. Each one includes its face's optical correction,
+				so the steps increase in apparent x-height even where the px values
+				don't. For example, <code>--text-sub</code> at 22px looks larger than
+				<code>--text-lead</code> at 24px because Familjen's x-height is much
 				taller than Newsreader's.
 			</p>
 			<div>
@@ -201,8 +199,8 @@ const hex = (scheme: "light" | "dark", name: string) =>
 		<section class="flow">
 			<h2>Spacing</h2>
 			<p class="note">
-				Base unit 8px, derived from the 32px body line box, so vertical rhythm and
-				spacing share one foundation.
+				The base unit is 8px, a quarter of the 32px body line, so spacing and
+				vertical rhythm line up.
 			</p>
 			<div>
 				{
@@ -221,23 +219,20 @@ const hex = (scheme: "light" | "dark", name: string) =>
 			<h2>Measure</h2>
 			<p class="note">
 				<code>--measure</code> is 35rem, about 66 characters at 20px Newsreader,
-				computed from the font's real average advance rather than the
-				<code>ch</code> approximation.
+				measured from the font's average advance instead of <code>ch</code>.
 			</p>
 			<p class="measure">
-				I have been meaning to write more, and the site should make that easy
-				rather than something I put off. The typography has to hold running text
-				comfortably for a thousand words at a stretch, not just look sharp in a
-				screenshot of the landing page. This paragraph is set at the measure, so
-				if the line feels long or short, this is the control to change.
+				I've been meaning to write more, and I want the site to make that easy.
+				Body text needs to stay comfortable to read for a thousand words or so.
+				This paragraph is set at the measure, so if the lines feel too long or
+				too short, <code>--measure</code> is the thing to change.
 			</p>
 		</section>
 
 		<section class="flow">
 			<h2>Size ladder</h2>
 			<p class="note">
-				Raw reference, independent of the scale — useful when judging a size that
-				is not yet a token.
+				Raw sizes outside the scale, for judging a size that isn't a token yet.
 			</p>
 			<div>
 				{
@@ -366,9 +361,9 @@ const hex = (scheme: "light" | "dark", name: string) =>
 		gap: var(--space-3);
 	}
 
-	/* Explicit values rather than a per-panel color-scheme: the build lowers
-	   light-dark() to a fallback that resolves once at :root, so theming a
-	   single subtree doesn't re-theme the tokens. See tokens.css. */
+	/* Explicit values, because a per-panel color-scheme doesn't work here.
+	   The build lowers light-dark() to a fallback that resolves once at
+	   :root, so a subtree can't re-theme the tokens. See tokens.css. */
 	.theme {
 		border: 1px solid;
 		border-radius: var(--radius);

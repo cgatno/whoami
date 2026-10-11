@@ -1,9 +1,9 @@
 /*
- * Reset — adapted from Andy Bell's "A (more) modern CSS reset" (2023).
- * The lowest layer, so everything else overrides it.
+ * Reset, adapted from Andy Bell's "A (more) modern CSS reset" (2023).
+ * It's the lowest layer, so everything else overrides it.
  *
- * Default margins are removed rather than tuned: spacing between elements is
- * owned by layout (.prose, .flow, or a component), not by element defaults.
+ * Default margins are removed. Spacing between elements comes from layout
+ * (.prose, .flow, or a component).
  */
 @layer reset {
 	*,
@@ -84,10 +84,10 @@
 	}
 
 	/*
-	 * !important inside the LOWEST layer is the strongest declaration in the
-	 * cascade: layered !important beats unlayered !important, and earlier
-	 * layers win among importants. So no component can re-enable motion for
-	 * someone who asked for less of it.
+	 * !important in the lowest layer beats every other declaration: for
+	 * !important rules the layer order is reversed, and layered beats
+	 * unlayered. No component can turn motion back on for someone who asked
+	 * for less of it.
 	 */
 	@media (prefers-reduced-motion: reduce) {
 		*,

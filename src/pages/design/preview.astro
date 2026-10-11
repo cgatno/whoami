@@ -2,10 +2,10 @@
 import Base from "../../layouts/Base.astro";
 import { Code } from "astro:components";
 
-// Composition preview: the global layers applied to realistic content, as
-// opposed to /design, which is the reference. The post uses the real
-// `.prose` styles from src/styles/prose.css; only the demo scaffolding and
-// not-yet-extracted landing/UI samples are styled here.
+// Composition preview: the global layers applied to realistic content.
+// /design is the reference. The post uses the real `.prose` styles from
+// src/styles/prose.css. The demo scaffolding and the landing/UI samples,
+// which aren't components yet, are styled here.
 
 const tsSample = `// Pin opsz to the body size: same bytes.
 import { defineConfig, fontProviders } from "astro/config";
@@ -29,7 +29,7 @@ function payloadKB(bytes: number, precise = false) {
   return (bytes / 1024).toFixed(precise ? 2 : 1) + " KB";
 }`;
 
-const cssSample = `/* Code follows the palette, not a fixed theme */
+const cssSample = `/* Code blocks use the palette's colors */
 :root {
   --astro-code-token-keyword: var(--accent);
   --astro-code-token-string: var(--secondary);
@@ -41,7 +41,7 @@ const cssSample = `/* Code follows the palette, not a fixed theme */
 }`;
 ---
 
-<Base title="Preview — whoami">
+<Base title="Preview · whoami">
 	<meta slot="head" name="robots" content="noindex" />
 	<main class="page">
 
@@ -52,81 +52,72 @@ const cssSample = `/* Code follows the palette, not a fixed theme */
 			<button class="thm" type="button" data-theme-set="system">System</button>
 		</div>
 
-		<p class="chrome-label">whoami — composition preview</p>
+		<p class="chrome-label">whoami · composition preview</p>
 		<h1 class="page-title">Preview</h1>
 		<p class="page-note">
-			The tokens applied to realistic content, to judge whether the rules
-			compose rather than whether the parts are correct. For the reference
-			ladders, see <a href="/design">the style guide</a>. Switch themes above;
-			every colour pairing on the page is contrast-verified.
+			The tokens applied to realistic content, to see how they work together.
+			For the reference values, see <a href="/design">the style guide</a>.
+			Switch themes above. Every color pairing on the page has been
+			contrast-checked.
 		</p>
 
 		<section class="frame">
 			<p class="chrome-label">Long-form post</p>
 			<article class="prose">
 				<p class="meta">20 Sep 2026 · 8 min read · Typography</p>
-				<h1>What a typeface costs when you measure it properly</h1>
+				<h1>What my fonts actually cost</h1>
 				<p class="lead">
-					I spent an afternoon assuming a font was expensive because it had
-					too many axes, and discovered the expensive part was an axis I was
-					not using at all.
+					I assumed one of my fonts was heavy because it had too many axes. It
+					turned out most of the weight came from an axis I wasn't even using.
 				</p>
 
 				<p>
-					The site was loading 301 KB of fonts before a single word had been
-					written. That number felt wrong, so I went looking for where it came
-					from — and the answer turned out to contradict most of what I
-					believed about variable fonts.
+					This site was loading 301 KB of fonts before I had written a single
+					word. That seemed like a lot, so I went looking for where it was
+					coming from.
 				</p>
 
-				<h2>Ranges do not cost what you think</h2>
+				<h2>Narrowing a range saves nothing</h2>
 				<p>
-					The intuition is that a wider axis range means a larger file, and
-					that narrowing it saves bytes. It does not. Google Fonts serves one
-					file per axis <em>combination</em>, and asking for a sub-range
-					returns a byte-identical file to asking for the whole thing.
+					I figured a wider axis range meant a bigger file, so narrowing the
+					range would save bytes. It doesn't. Google Fonts serves one file per
+					<em>combination</em> of axes, and asking for part of a range returns
+					the same file as asking for all of it.
 				</p>
 				<pre><code>{`Newsreader italic 200..800   63.0 KB
 Newsreader italic 400..600   63.0 KB   // identical
 Newsreader italic 400        23.8 KB   // pinned`}</code></pre>
 				<p>
-					Only two operations change the payload: dropping an axis entirely,
-					or pinning it to a single value. Everything else is decoration. Once
-					that clicked, the optimisation became obvious — the
-					<code>wdth</code> axis I had been carefully "narrowing" was costing 53
-					KB and doing nothing, because nothing in the CSS ever set
+					Only two things change the size: dropping an axis, or pinning it to a
+					single value. The <code>wdth</code> axis I had been carefully
+					narrowing was costing 53 KB, and nothing in my CSS ever set
 					<code>font-stretch</code>.
 				</p>
 
 				<blockquote>
 					<p>
-						Buy the range only when one face is genuinely rendered across it.
-						Otherwise pin it and take the optical correction for free.
+						Keep a range only if the site really uses it. Otherwise pin the
+						axis.
 					</p>
 				</blockquote>
 
-				<h3>The counter-intuitive part</h3>
+				<h3>Pinning optical size is free</h3>
 				<p>
-					Pinning <code>opsz</code> to the size you actually set text at is
-					strictly better than omitting it. You get optical sizing tuned for
-					your body copy at roughly zero cost over the default instance:
+					Pinning <code>opsz</code> to the size I set body text at costs
+					nothing over leaving it out, and the text gets optical sizing tuned
+					for that size:
 				</p>
 				<ul>
 					<li>Newsreader with <code>opsz</code> ranged 6–72: 128.8 KB</li>
 					<li>Newsreader with <code>opsz</code> pinned at 16: 56.8 KB</li>
 					<li>Newsreader with no <code>opsz</code> requested: 56.8 KB</li>
 				</ul>
-				<p>
-					Same file size, better rendering. There is no trade-off to weigh —
-					it is simply the correct thing to do, and I had been leaving it on
-					the table.
-				</p>
+				<p>Same file size and better rendering, so I pinned it.</p>
 
 				<hr />
 				<p class="footnote">
-					All figures are the measured latin <code>woff2</code> payload, taken
-					from the Google Fonts API rather than estimated. The full working is
-					in the repository's design notes.
+					All figures are measured latin <code>woff2</code> sizes from the
+					Google Fonts API.
 				</p>
 			</article>
 		</section>
@@ -150,11 +141,10 @@ Newsreader italic 400        23.8 KB   // pinned`}</code></pre>
 				<a href="#">Résumé</a>
 				<a href="#">Colophon</a>
 			</nav>
-			<p class="hero">Engineer, occasional writer, persistent tinkerer.</p>
+			<p class="hero">Software engineer &amp; dabbling designer.</p>
 			<p class="hero-lead">
-				I build things for the web and then take them apart to see why they
-				worked. Currently rebuilding this site in public, one measured decision
-				at a time.
+				My name's Christian Gaetano. I'm a software engineer who likes building
+				things for the web, and I love helping design them when I can.
 			</p>
 			<p class="chrome-label" style="margin-bottom:var(--space-2)">
 				Selected work
@@ -162,26 +152,17 @@ Newsreader italic 400        23.8 KB   // pinned`}</code></pre>
 			<ul class="work-list">
 				<li class="work-item">
 					<h3>whoami</h3>
-					<p>
-						This site. Astro on Cloudflare Workers, with a type system built
-						from measured font metrics rather than vibes.
-					</p>
+					<p>This site. Astro on Cloudflare Workers.</p>
 					<span class="year">2026</span>
 				</li>
 				<li class="work-item">
 					<h3>Field notes</h3>
-					<p>
-						Short writing about the things that turn out to be more
-						interesting than they first appear.
-					</p>
+					<p>Short posts about things I'm working on or figuring out.</p>
 					<span class="year">2026</span>
 				</li>
 				<li class="work-item">
 					<h3>Earlier projects</h3>
-					<p>
-						A decade of work that predates this rebuild, gradually being
-						migrated across.
-					</p>
+					<p>Older work that I'm slowly moving over from the previous site.</p>
 					<span class="year">2015–25</span>
 				</li>
 			</ul>
