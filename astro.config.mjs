@@ -20,6 +20,9 @@ export default defineConfig({
   // All CSS is ~2 KB gzipped, so it's inlined to save a request (homepage:
   // 2.9 KB gz total). It isn't cached across pages. Revisit if the CSS grows.
   build: { inlineStylesheets: "always" },
+  // Astro 7 defaults to "jsx", which drops line breaks next to elements and
+  // runs words together in wrapped paragraphs.
+  compressHTML: true,
   integrations: [
     // Matches on the path so it still works after `site` changes at cutover.
     sitemap({ filter: (page) => !new URL(page).pathname.startsWith("/design") }),
