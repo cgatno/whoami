@@ -24,7 +24,11 @@ export default defineConfig({
   // (homepage: 2.9 KB gz total) at the cost of not caching it across pages.
   // Revisit if the CSS grows well past that.
   build: { inlineStylesheets: "always" },
-  integrations: [sitemap()],
+  integrations: [
+    // Path-matched rather than compared against a full URL, so it survives
+    // the `site` change at cutover.
+    sitemap({ filter: (page) => !new URL(page).pathname.startsWith("/design") }),
+  ],
   // Colours come from src/styles/syntax.css, mapped onto palette roles.
   // <Code /> doesn't inherit this, so pass theme="css-variables" there too.
   markdown: {

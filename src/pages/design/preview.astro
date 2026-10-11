@@ -1,0 +1,552 @@
+---
+import Base from "../../layouts/Base.astro";
+import { Code } from "astro:components";
+
+// Composition preview: the global layers applied to realistic content, as
+// opposed to /design, which is the reference. The post uses the real
+// `.prose` styles from src/styles/prose.css; only the demo scaffolding and
+// not-yet-extracted landing/UI samples are styled here.
+
+const tsSample = `// Pin opsz to the body size: same bytes.
+import { defineConfig, fontProviders } from "astro/config";
+
+const BODY_OPSZ = 16;
+
+export default defineConfig({
+  fonts: [
+    {
+      provider: fontProviders.google(),
+      name: "Newsreader",
+      weights: ["200 800"],
+      options: {
+        experimental: { variableAxis: { opsz: [String(BODY_OPSZ)] } },
+      },
+    },
+  ],
+});
+
+function payloadKB(bytes: number, precise = false) {
+  return (bytes / 1024).toFixed(precise ? 2 : 1) + " KB";
+}`;
+
+const cssSample = `/* Code follows the palette, not a fixed theme */
+:root {
+  --astro-code-token-keyword: var(--accent);
+  --astro-code-token-string: var(--secondary);
+}
+
+.prose pre {
+  padding: var(--space-3);
+  border-radius: 2px;
+}`;
+---
+
+<Base title="Preview — whoami">
+	<meta slot="head" name="robots" content="noindex" />
+	<main class="page">
+
+		<div class="switcher">
+			<span class="chrome-label">Theme</span>
+			<button class="thm" type="button" data-theme-set="light">Light</button>
+			<button class="thm" type="button" data-theme-set="dark">Dark</button>
+			<button class="thm" type="button" data-theme-set="system">System</button>
+		</div>
+
+		<p class="chrome-label">whoami — composition preview</p>
+		<h1 class="page-title">Preview</h1>
+		<p class="page-note">
+			The tokens applied to realistic content, to judge whether the rules
+			compose rather than whether the parts are correct. For the reference
+			ladders, see <a href="/design">the style guide</a>. Switch themes above;
+			every colour pairing on the page is contrast-verified.
+		</p>
+
+		<section class="frame">
+			<p class="chrome-label">Long-form post</p>
+			<article class="prose">
+				<p class="meta">20 Sep 2026 · 8 min read · Typography</p>
+				<h1>What a typeface costs when you measure it properly</h1>
+				<p class="lead">
+					I spent an afternoon assuming a font was expensive because it had
+					too many axes, and discovered the expensive part was an axis I was
+					not using at all.
+				</p>
+
+				<p>
+					The site was loading 301 KB of fonts before a single word had been
+					written. That number felt wrong, so I went looking for where it came
+					from — and the answer turned out to contradict most of what I
+					believed about variable fonts.
+				</p>
+
+				<h2>Ranges do not cost what you think</h2>
+				<p>
+					The intuition is that a wider axis range means a larger file, and
+					that narrowing it saves bytes. It does not. Google Fonts serves one
+					file per axis <em>combination</em>, and asking for a sub-range
+					returns a byte-identical file to asking for the whole thing.
+				</p>
+				<pre><code>{`Newsreader italic 200..800   63.0 KB
+Newsreader italic 400..600   63.0 KB   // identical
+Newsreader italic 400        23.8 KB   // pinned`}</code></pre>
+				<p>
+					Only two operations change the payload: dropping an axis entirely,
+					or pinning it to a single value. Everything else is decoration. Once
+					that clicked, the optimisation became obvious — the
+					<code>wdth</code> axis I had been carefully "narrowing" was costing 53
+					KB and doing nothing, because nothing in the CSS ever set
+					<code>font-stretch</code>.
+				</p>
+
+				<blockquote>
+					<p>
+						Buy the range only when one face is genuinely rendered across it.
+						Otherwise pin it and take the optical correction for free.
+					</p>
+				</blockquote>
+
+				<h3>The counter-intuitive part</h3>
+				<p>
+					Pinning <code>opsz</code> to the size you actually set text at is
+					strictly better than omitting it. You get optical sizing tuned for
+					your body copy at roughly zero cost over the default instance:
+				</p>
+				<ul>
+					<li>Newsreader with <code>opsz</code> ranged 6–72: 128.8 KB</li>
+					<li>Newsreader with <code>opsz</code> pinned at 16: 56.8 KB</li>
+					<li>Newsreader with no <code>opsz</code> requested: 56.8 KB</li>
+				</ul>
+				<p>
+					Same file size, better rendering. There is no trade-off to weigh —
+					it is simply the correct thing to do, and I had been leaving it on
+					the table.
+				</p>
+
+				<hr />
+				<p class="footnote">
+					All figures are the measured latin <code>woff2</code> payload, taken
+					from the Google Fonts API rather than estimated. The full working is
+					in the repository's design notes.
+				</p>
+			</article>
+		</section>
+
+		<section class="frame">
+			<p class="chrome-label">Code blocks</p>
+			<div class="code-samples">
+				<div class="chrome-label" style="margin-bottom:var(--space-2)">TypeScript</div>
+				<Code code={tsSample} lang="ts" theme="css-variables" />
+				<div class="chrome-label" style="margin:var(--space-4) 0 var(--space-2)">CSS</div>
+				<Code code={cssSample} lang="css" theme="css-variables" />
+			</div>
+		</section>
+
+		<section class="frame">
+			<p class="chrome-label">Landing</p>
+			<nav class="landing-nav">
+				<span class="brand">Christian Gaetano</span>
+				<a href="#">Writing</a>
+				<a href="#">Work</a>
+				<a href="#">Résumé</a>
+				<a href="#">Colophon</a>
+			</nav>
+			<p class="hero">Engineer, occasional writer, persistent tinkerer.</p>
+			<p class="hero-lead">
+				I build things for the web and then take them apart to see why they
+				worked. Currently rebuilding this site in public, one measured decision
+				at a time.
+			</p>
+			<p class="chrome-label" style="margin-bottom:var(--space-2)">
+				Selected work
+			</p>
+			<ul class="work-list">
+				<li class="work-item">
+					<h3>whoami</h3>
+					<p>
+						This site. Astro on Cloudflare Workers, with a type system built
+						from measured font metrics rather than vibes.
+					</p>
+					<span class="year">2026</span>
+				</li>
+				<li class="work-item">
+					<h3>Field notes</h3>
+					<p>
+						Short writing about the things that turn out to be more
+						interesting than they first appear.
+					</p>
+					<span class="year">2026</span>
+				</li>
+				<li class="work-item">
+					<h3>Earlier projects</h3>
+					<p>
+						A decade of work that predates this rebuild, gradually being
+						migrated across.
+					</p>
+					<span class="year">2015–25</span>
+				</li>
+			</ul>
+		</section>
+
+		<section class="frame">
+			<p class="chrome-label">Interface elements</p>
+			<div class="ui-grid">
+				<div class="ui-group">
+					<h4>Buttons</h4>
+					<div class="btn-row">
+						<button class="btn solid" type="button">Read the post</button>
+						<button class="btn" type="button">Subscribe</button>
+						<button class="btn quiet" type="button">Cancel</button>
+					</div>
+				</div>
+
+				<div class="ui-group">
+					<h4>Tags</h4>
+					<div class="tag-row">
+						<span class="tag">Typography</span>
+						<span class="tag">Astro</span>
+						<span class="tag">Performance</span>
+					</div>
+				</div>
+
+				<div class="ui-group">
+					<h4>Form field</h4>
+					<div class="field">
+						<label for="preview-email">Email</label>
+						<input
+							id="preview-email"
+							type="email"
+							placeholder="you@example.com"
+						/>
+						<span class="hint">Used only for new posts. No more than monthly.</span>
+					</div>
+				</div>
+
+				<div class="ui-group">
+					<h4>Figures</h4>
+					<span class="stat">169.7 KB</span>
+					<span class="stat-label">total font payload</span>
+				</div>
+
+				<div class="ui-group">
+					<h4>Inline link</h4>
+					<p>
+						A sentence with <a href="#">a link inside it</a> to check that the
+						underline sits clear of Newsreader's descenders.
+					</p>
+				</div>
+
+				<div class="ui-group">
+					<h4>Metadata</h4>
+					<p class="meta-sample">
+						20 Sep 2026 · 8 min read · Typography
+					</p>
+				</div>
+			</div>
+		</section>
+	</main>
+
+		<script>
+			// Forces a theme by setting data-theme on <html>, which tokens.css maps
+			// to color-scheme. "System" removes the attribute so the OS decides.
+			const root = document.documentElement;
+			const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>(".thm"));
+			function apply(theme: string) {
+				if (theme === "system") delete root.dataset.theme;
+				else root.dataset.theme = theme;
+				buttons.forEach((b) =>
+					b.setAttribute("aria-pressed", String(b.dataset.themeSet === theme)),
+				);
+			}
+			let theme = "system";
+			try {
+				theme = localStorage.getItem("whoami-theme") || "system";
+			} catch {}
+			buttons.forEach((b) =>
+				b.addEventListener("click", () => {
+					theme = b.dataset.themeSet ?? "system";
+					try {
+						localStorage.setItem("whoami-theme", theme);
+					} catch {}
+					apply(theme);
+				}),
+			);
+			apply(theme);
+		</script>
+</Base>
+
+<style>
+	/* Demo scaffolding plus the landing and UI samples, which stay here until
+	   they become real components. Prose, links, code, focus and motion all
+	   come from the global layers. */
+	.page {
+		max-width: 64rem;
+		margin-inline: auto;
+		padding: 0 var(--space-3) var(--space-9);
+	}
+
+	.switcher {
+		position: sticky;
+		top: 0;
+		z-index: 10;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		align-items: center;
+		background: var(--ground);
+		border-block-end: 1px solid var(--rule);
+		margin-inline: calc(var(--space-3) * -1);
+		margin-block-end: var(--space-6);
+		padding: var(--space-3);
+	}
+
+	.thm {
+		font-family: var(--font-ui);
+		font-variation-settings: var(--axes-ui);
+		font-size: var(--text-meta);
+		font-weight: 500;
+		padding: var(--space-1) var(--space-2);
+		border: 1px solid var(--rule-strong);
+		border-radius: var(--radius);
+		background: none;
+		color: var(--dim);
+		cursor: pointer;
+	}
+
+	.thm[aria-pressed="true"] {
+		color: var(--ground);
+		background: var(--accent);
+		border-color: var(--accent);
+	}
+
+	.chrome-label {
+		font-family: var(--font-code);
+		font-variation-settings: var(--axes-code);
+		font-size: var(--text-micro);
+		font-weight: 500;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--faint);
+		margin-block-end: var(--space-2);
+	}
+
+	.switcher .chrome-label {
+		margin: 0;
+	}
+
+	.page-title {
+		font-size: var(--text-section);
+		margin-block-end: var(--space-3);
+	}
+
+	.page-note {
+		font-size: var(--text-small);
+		color: var(--dim);
+		max-width: var(--measure);
+		margin-block-end: var(--space-7);
+	}
+
+	.frame {
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		padding: var(--space-5) var(--space-4);
+		margin-block-end: var(--space-7);
+	}
+
+	.frame > .chrome-label {
+		margin-block-end: var(--space-5);
+	}
+
+	.code-samples {
+		max-width: var(--measure);
+	}
+
+	/* ---- landing sample ---- */
+	.landing-nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-4);
+		align-items: baseline;
+		font-family: var(--font-ui);
+		font-variation-settings: var(--axes-ui);
+		font-size: var(--text-meta);
+		font-weight: 500;
+		margin-block-end: var(--space-8);
+	}
+
+	.landing-nav .brand {
+		font-family: var(--font-heading);
+		font-size: var(--text-sub);
+		font-weight: 700;
+		margin-inline-end: auto;
+	}
+
+	.landing-nav a {
+		color: var(--dim);
+		text-decoration: none;
+	}
+
+	.landing-nav a:hover {
+		color: var(--ink);
+	}
+
+	.hero {
+		font-family: var(--font-heading);
+		font-size: var(--text-display);
+		font-weight: 700;
+		line-height: var(--leading-display);
+		text-wrap: balance;
+		margin-block-end: var(--space-5);
+	}
+
+	.hero-lead {
+		font-size: var(--text-lead);
+		line-height: var(--leading-lead);
+		max-width: var(--measure);
+		margin-block-end: var(--space-7);
+	}
+
+	.work-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		border-block-start: 1px solid var(--rule);
+	}
+
+	.work-item {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		align-items: baseline;
+		padding-block: var(--space-3);
+		border-block-end: 1px solid var(--rule);
+	}
+
+	.work-item h3 {
+		flex: 1 1 14rem;
+	}
+
+	.work-item p {
+		flex: 2 1 18rem;
+		font-size: var(--text-small);
+		color: var(--dim);
+	}
+
+	.work-item .year {
+		font-family: var(--font-code);
+		font-variation-settings: var(--axes-code);
+		font-size: var(--text-meta);
+		font-variant-numeric: tabular-nums;
+		color: var(--faint);
+	}
+
+	/* ---- interface samples ---- */
+	.ui-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+		gap: var(--space-5);
+	}
+
+	.ui-group h4 {
+		font-family: var(--font-code);
+		font-variation-settings: var(--axes-code);
+		font-size: var(--text-micro);
+		font-weight: 500;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--faint);
+		margin-block-end: var(--space-3);
+	}
+
+	.btn-row,
+	.tag-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		align-items: center;
+	}
+
+	.btn {
+		font-family: var(--font-ui);
+		font-variation-settings: var(--axes-ui);
+		font-size: var(--text-meta);
+		font-weight: 600;
+		padding: var(--space-2) var(--space-3);
+		border: 1px solid currentColor;
+		border-radius: var(--radius);
+		background: none;
+		color: inherit;
+		cursor: pointer;
+	}
+
+	.btn.solid {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--ground);
+	}
+
+	.btn.quiet {
+		border-color: var(--rule-strong);
+		color: var(--dim);
+	}
+
+	.tag {
+		font-family: var(--font-code);
+		font-variation-settings: var(--axes-code);
+		font-size: var(--text-micro);
+		font-weight: 500;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--dim);
+		border: 1px solid var(--rule);
+		border-radius: var(--radius);
+		padding: 0.2em 0.5em;
+	}
+
+	.field {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.field label {
+		font-family: var(--font-code);
+		font-variation-settings: var(--axes-code);
+		font-size: var(--text-micro);
+		font-weight: 500;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--faint);
+	}
+
+	.field input {
+		font-size: var(--text-small);
+		padding: var(--space-2);
+		border: 1px solid var(--rule-strong);
+		border-radius: var(--radius);
+		background: none;
+		color: inherit;
+	}
+
+	.field .hint {
+		font-size: var(--text-small);
+		color: var(--dim);
+	}
+
+	.stat {
+		display: block;
+		font-family: var(--font-code);
+		font-variation-settings: var(--axes-code);
+		font-size: var(--text-section);
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+		color: var(--secondary);
+	}
+
+	.stat-label,
+	.meta-sample {
+		font-family: var(--font-ui);
+		font-variation-settings: var(--axes-ui);
+		font-size: var(--text-meta);
+		color: var(--dim);
+	}
+</style>

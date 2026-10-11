@@ -1,0 +1,418 @@
+---
+import Base from "../../layouts/Base.astro";
+import paletteCss from "../../styles/palette.css?raw";
+
+// Working design page: the reference. Not linked from anywhere, excluded from
+// the sitemap. Specimens set only family, weight and size; everything else
+// comes from the global layers, so this page shows what actually ships.
+
+const familjenWeights = [400, 500, 600, 700];
+const newsreaderWeights = [200, 300, 400, 500, 600, 700, 800];
+const recursiveWeights = [300, 400, 500, 600, 700, 800, 900, 1000];
+
+const sizes = [12, 14, 16, 18, 21, 24, 32, 42, 56];
+
+const scale = [
+	["--text-micro", 12, "Recursive MONO 1", "code", 6.38, "eyebrows, labels"],
+	["--text-meta", 14, "Recursive MONO 0", "ui", 7.45, "metadata, chrome"],
+	["--text-small", 16, "Newsreader", "body", 6.82, "captions, footnotes"],
+	["--text-body", 20, "Newsreader", "body", 8.52, "running text"],
+	["--text-sub", 22, "Familjen Grotesk", "heading", 11.0, "sub-heading"],
+	["--text-lead", 24, "Newsreader", "body", 10.22, "standfirst"],
+	["--text-section", 28, "Familjen Grotesk", "heading", 14.0, "section heading"],
+	["--text-title", 40, "Familjen Grotesk", "heading", 20.0, "page / post title"],
+	["--text-display", 72, "Familjen Grotesk", "heading", 36.0, "landing hero"],
+];
+
+const spacing = [
+	["--space-1", 4], ["--space-2", 8], ["--space-3", 16], ["--space-4", 24],
+	["--space-5", 32], ["--space-6", 48], ["--space-7", 64], ["--space-8", 96],
+	["--space-9", 128],
+];
+
+// Read the sRGB pairs straight from the generated file, so the swatch labels
+// can never drift from what ships.
+const tokens = [...paletteCss.matchAll(/--([\w-]+): light-dark\((#[0-9a-f]{6}), (#[0-9a-f]{6})\)/g)]
+	.map(([, name, light, dark]) => ({ name, light, dark }));
+const hex = (scheme: "light" | "dark", name: string) =>
+	tokens.find((t) => t.name === name)![scheme];
+---
+
+<Base title="Design — whoami">
+	<meta slot="head" name="robots" content="noindex" />
+
+	<main class="page flow">
+		<p class="label">whoami — working design page</p>
+		<h1>Design</h1>
+		<p class="note">
+			The reference: every value here comes from the real fonts, tokens and
+			global layers, so what you see is what ships. <a href="/design/preview"
+				>The composition preview</a
+			> shows the same rules applied to a post, a landing page and interface
+			elements.
+		</p>
+
+		<section class="flow">
+			<h2>Colour</h2>
+			<p class="note">
+				Palette B, Petrol &amp; Ochre, in both themes. Each token is a
+				<code>light-dark()</code> pair in <code>palette.css</code>, which
+				<code>npm run palettes</code> generates and contrast-checks; these values
+				are read straight from that file.
+			</p>
+			<div class="themes">
+				{
+					(["light", "dark"] as const).map((scheme) => (
+						<div
+							class="theme"
+							style={`background:${hex(scheme, "ground")};color:${hex(scheme, "ink")};border-color:${hex(scheme, "rule")}`}
+						>
+							<p class="label" style={`color:${hex(scheme, "faint")}`}>{scheme}</p>
+							{tokens.map((t) => (
+								<div class="swatch">
+									<span
+										class="chip"
+										style={`background:${t[scheme]};outline-color:${hex(scheme, "rule")}`}
+									/>
+									<span class="axis" style={`color:${hex(scheme, "faint")}`}>--{t.name}</span>
+									<span class="hex" style={`color:${hex(scheme, "dim")}`}>{t[scheme]}</span>
+								</div>
+							))}
+						</div>
+					))
+				}
+			</div>
+			<p class="note">
+				On a P3 display, <code>--accent</code> and <code>--secondary</code> render
+				at higher chroma in the light theme than these sRGB values show.
+			</p>
+		</section>
+
+		<section class="flow">
+			<h2>Familjen Grotesk — headings</h2>
+			<p class="note">Variable weight 400–700. No optical size axis on this family.</p>
+			<div>
+				{
+					familjenWeights.map((w) => (
+						<div class="row">
+							<span class="axis">wght {w}</span>
+							<span class="specimen heading" style={`font-weight:${w}`}>
+								Christian Gaetano
+							</span>
+						</div>
+					))
+				}
+			</div>
+		</section>
+
+		<section class="flow">
+			<h2>Newsreader — body</h2>
+			<p class="note">
+				Variable weight 200–800, optical size pinned at 16. Italic is a separate
+				file pinned to weight 400, so bold italic will be synthesised rather than
+				drawn.
+			</p>
+			<div>
+				{
+					newsreaderWeights.map((w) => (
+						<div class="row">
+							<span class="axis">wght {w}</span>
+							<span class="specimen body" style={`font-weight:${w}`}>
+								Christian Gaetano
+							</span>
+						</div>
+					))
+				}
+				<div class="row">
+					<span class="axis">italic 400</span>
+					<span class="specimen body" style="font-style:italic">Christian Gaetano</span>
+				</div>
+				<div class="row">
+					<span class="axis">faux bold</span>
+					<span class="specimen body" style="font-style:italic;font-weight:700">
+						Christian Gaetano
+					</span>
+				</div>
+			</div>
+		</section>
+
+		<section class="flow">
+			<h2>Recursive — two registers, one file</h2>
+			<p class="note">
+				Variable weight 300–1000 with MONO ranged 0–1. MONO 0 is a proportional
+				sans for interface chrome (<code>--font-ui</code>); MONO 1 is a true
+				monospace for code (<code>--font-code</code>). Character widths stay
+				constant across weights, so changing weight never reflows text.
+			</p>
+			<p class="label">MONO 0 — interface chrome</p>
+			<div>
+				{
+					recursiveWeights.map((w) => (
+						<div class="row">
+							<span class="axis">wght {w}</span>
+							<span class="specimen ui" style={`font-weight:${w}`}>
+								Christian Gaetano
+							</span>
+						</div>
+					))
+				}
+			</div>
+			<p class="label">MONO 1 — code</p>
+			<div>
+				{
+					recursiveWeights.map((w) => (
+						<div class="row">
+							<span class="axis">wght {w}</span>
+							<span class="specimen code" style={`font-weight:${w}`}>
+								Christian Gaetano
+							</span>
+						</div>
+					))
+				}
+			</div>
+		</section>
+
+		<section class="flow">
+			<h2>Type scale</h2>
+			<p class="note">
+				Named by role, not size. Each step carries its face's optical correction,
+				so the ladder is monotonic in apparent x-height even where the px values
+				invert — <code>--text-sub</code> at 22px looks larger than
+				<code>--text-lead</code> at 24px, because Familjen's x-height is so much
+				taller than Newsreader's.
+			</p>
+			<div>
+				{
+					scale.map(([token, px, face, role, xh, job]) => (
+						<div class="row">
+							<span class="axis wide">{token}</span>
+							<span class={role} style={`font-size:var(${token})`}>
+								Christian Gaetano
+							</span>
+							<span class="axis full">
+								{px}px · {face} · x-height {xh}px · {job}
+							</span>
+						</div>
+					))
+				}
+			</div>
+		</section>
+
+		<section class="flow">
+			<h2>Spacing</h2>
+			<p class="note">
+				Base unit 8px, derived from the 32px body line box, so vertical rhythm and
+				spacing share one foundation.
+			</p>
+			<div>
+				{
+					spacing.map(([token, px]) => (
+						<div class="row">
+							<span class="axis wide">{token}</span>
+							<span class="axis">{px}px</span>
+							<span class="bar" style={`width:var(${token})`} />
+						</div>
+					))
+				}
+			</div>
+		</section>
+
+		<section class="flow">
+			<h2>Measure</h2>
+			<p class="note">
+				<code>--measure</code> is 35rem, about 66 characters at 20px Newsreader,
+				computed from the font's real average advance rather than the
+				<code>ch</code> approximation.
+			</p>
+			<p class="measure">
+				I have been meaning to write more, and the site should make that easy
+				rather than something I put off. The typography has to hold running text
+				comfortably for a thousand words at a stretch, not just look sharp in a
+				screenshot of the landing page. This paragraph is set at the measure, so
+				if the line feels long or short, this is the control to change.
+			</p>
+		</section>
+
+		<section class="flow">
+			<h2>Size ladder</h2>
+			<p class="note">
+				Raw reference, independent of the scale — useful when judging a size that
+				is not yet a token.
+			</p>
+			<div>
+				{
+					sizes.map((s) => (
+						<div class="row">
+							<span class="axis">{s}px</span>
+							<span class="body" style={`font-size:${s}px`}>
+								The quick brown fox jumps over the lazy dog
+							</span>
+						</div>
+					))
+				}
+			</div>
+		</section>
+
+		<section class="flow">
+			<h2>Loaded files</h2>
+			<p class="note">What the font config produces. Figures are measured latin woff2.</p>
+			<table>
+				<thead>
+					<tr><th>Family</th><th>Axes</th><th>Size</th></tr>
+				</thead>
+				<tbody>
+					<tr><td>Familjen Grotesk</td><td class="code">wght 400–700</td><td class="code">18.4 KB</td></tr>
+					<tr><td>Newsreader roman</td><td class="code">wght 200–800, opsz 16</td><td class="code">56.8 KB</td></tr>
+					<tr><td>Newsreader italic</td><td class="code">wght 400, opsz 16</td><td class="code">23.8 KB</td></tr>
+					<tr><td>Recursive</td><td class="code">wght 300–1000, MONO 0–1</td><td class="code">70.6 KB</td></tr>
+					<tr><td><strong>Total</strong></td><td></td><td class="code"><strong>169.7 KB</strong></td></tr>
+				</tbody>
+			</table>
+		</section>
+	</main>
+</Base>
+
+<style>
+	.page {
+		--flow-space: var(--space-7);
+		max-width: 62rem;
+		margin-inline: auto;
+		padding: var(--space-6) var(--space-3) var(--space-9);
+	}
+
+	section {
+		--flow-space: var(--space-3);
+		border-block-start: 1px solid var(--rule);
+		padding-block-start: var(--space-4);
+	}
+
+	.note {
+		font-size: var(--text-small);
+		color: var(--dim);
+		max-width: var(--measure);
+	}
+
+	.label,
+	.axis,
+	th {
+		font-family: var(--font-code);
+		font-variation-settings: var(--axes-code);
+		font-size: var(--text-micro);
+		font-weight: 500;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--faint);
+	}
+
+	.row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		align-items: baseline;
+		padding-block: var(--space-2);
+		border-block-end: 1px solid var(--rule);
+	}
+
+	.axis {
+		flex: 0 0 4.5rem;
+	}
+
+	.axis.wide {
+		flex-basis: 9rem;
+	}
+
+	.axis.full {
+		flex-basis: 100%;
+		letter-spacing: 0.06em;
+	}
+
+	.specimen {
+		font-size: var(--text-section);
+	}
+
+	.heading {
+		font-family: var(--font-heading);
+	}
+
+	.body {
+		font-family: var(--font-body);
+	}
+
+	.ui {
+		font-family: var(--font-ui);
+		font-variation-settings: var(--axes-ui);
+	}
+
+	.code {
+		font-family: var(--font-code);
+		font-variation-settings: var(--axes-code);
+	}
+
+	.bar {
+		display: block;
+		height: 1rem;
+		background: var(--dim);
+	}
+
+	.measure {
+		max-width: var(--measure);
+		border-inline-start: 2px solid var(--rule);
+		padding-inline-start: var(--space-3);
+	}
+
+	.themes {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+		gap: var(--space-3);
+	}
+
+	/* Explicit values rather than a per-panel color-scheme: the build lowers
+	   light-dark() to a fallback that resolves once at :root, so theming a
+	   single subtree doesn't re-theme the tokens. See tokens.css. */
+	.theme {
+		border: 1px solid;
+		border-radius: var(--radius);
+		padding: var(--space-4);
+	}
+
+	.swatch {
+		display: flex;
+		gap: var(--space-3);
+		align-items: center;
+		padding-block: var(--space-1);
+	}
+
+	.chip {
+		flex: 0 0 2.5rem;
+		height: 1.5rem;
+		border-radius: var(--radius);
+		outline: 1px solid;
+	}
+
+	.swatch .axis {
+		flex: 1 1 auto;
+	}
+
+	.hex {
+		font-family: var(--font-code);
+		font-variation-settings: var(--axes-code);
+		font-size: var(--text-micro);
+		color: var(--dim);
+	}
+
+	table {
+		width: 100%;
+	}
+
+	th,
+	td {
+		text-align: start;
+		border-block-end: 1px solid var(--rule);
+		padding: var(--space-2) var(--space-3) var(--space-2) 0;
+		vertical-align: baseline;
+	}
+
+	td {
+		font-size: var(--text-small);
+	}
+</style>
