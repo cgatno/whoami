@@ -131,8 +131,8 @@ void main() {
 	float toMajor = abs(fract(k / 4.0 - 0.5) - 0.5) * STEP * 4.0;
 	float minor = 1.0 - smoothstep(0.5 * aa, 1.3 * aa, toMinor);
 	float major = 1.0 - smoothstep(0.9 * aa, 1.9 * aa, toMajor);
-	// None near text.
-	float line = max(0.45 * minor, 0.9 * major) * lively;
+	// They run right up to the text, so the map looks the same around it.
+	float line = max(0.45 * minor, 0.9 * major);
 
 	// Dry land is the page, with tone-on-tone contours.
 	vec3 land = mix(cGround, cRill, 0.55 * line);
