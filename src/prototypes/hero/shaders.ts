@@ -46,14 +46,9 @@ uniform float uNext;   // level of the next high or low, 0..1
 // name and tagline, G = small text.
 uniform sampler2D uText;
 uniform vec4 uTextRect;   // x, y, width, height in device px, origin top-left
-// A smooth blur of that mask over a slightly wider rectangle.
-uniform sampler2D uBlur;
-uniform vec2 uBlurSize;
-uniform vec4 uBlurRect;
 uniform float uTextOn;
 // 0 at the moment the canvas takes over the text from the page, easing to 1.
-// The text starts in the page's own colors and the map is still busy around
-// it, so the handoff is not a jump.
+// The text starts in the page's own colors, so the handoff is not a jump.
 uniform float uTextIn;
 uniform vec3 cInk, cDim;           // the page's colors for the name and tagline / small text
 uniform vec3 cInkLand, cInkWater;  // ink over dry land / over water
@@ -101,24 +96,19 @@ void main() {
 	vec2 f = rot * c * ZOOM + vec2(0.5 * uFieldAspect, 0.50);
 	float dir = uRate >= 0.0 ? 1.0 : -1.0;
 
-	// A soft zone around the text where the map calms down so letters stay
-	// readable: 0 away from text, 1 right around it.
+	// Where this pixel falls in the text mask. The map itself is the same
+	// with or without text over it.
 	vec2 px = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
-	vec2 bp = (px - uBlurRect.xy) / uBlurRect.zw;
-	bool inText = uTextOn > 0.5 && bp == clamp(bp, 0.0, 1.0);
-	float calm = inText ? uTextIn * smoothstep(0.01, 0.10, bicubic(uBlur, uBlurSize, bp).r) : 0.0;
-	float lively = 1.0 - calm;
+	vec2 tp = (px - uTextRect.xy) / uTextRect.zw;
+	bool inText = uTextOn > 0.5 && tp == clamp(tp, 0.0, 1.0);
 
-	// Aliveness, all of it slow and none of it near the text: the whole map
-	// undulates very slightly...
-	f += lively * 0.0026 * vec2(sin(uTime * 0.19 + f.y * 9.0), cos(uTime * 0.155 + f.x * 8.0));
+	// Aliveness, all of it slow: the whole map undulates very slightly...
+	f += 0.0026 * vec2(sin(uTime * 0.19 + f.y * 9.0), cos(uTime * 0.155 + f.x * 8.0));
 	vec2 uv = vec2(f.x / uFieldAspect, f.y);
-	// The ground is the same with or without text over it. The letters split
-	// along the real waterline.
 	float h = bicubic(uHeight, uHeightSize, uv).r;
 
 	// ...the water's edge laps in and out, out of step from place to place...
-	float lap = lively * 0.0044 * sin(uTime * 0.57 + vnoise(f * 2.5) * 6.283);
+	float lap = 0.0044 * sin(uTime * 0.57 + vnoise(f * 2.5) * 6.283);
 	float L = toL(uLevel) + lap;
 	float depth = L - h;
 	float aa = fwidth(h);
@@ -141,13 +131,9 @@ void main() {
 	// keyline along the edge. The keyline is a constant width on screen, not
 	// a depth band, so it does not swell on gentle slopes.
 	vec3 mid = mix(cWater, cDeep, 0.62);
-	// (The bands are left alone near text. Collapsing them to one tone made
-	// a lighter patch around letters over deep water, which read as a glow.)
 	float steps = clamp(floor(depth / (STEP * 2.0)), 0.0, 3.0) / 3.0;
 	vec3 wcol = mix(mid, cDeep, steps);
-	// No keyline near text: it is the same color as the dark theme's
-	// on-land ink, and letters blur into it.
-	float edge = (1.0 - smoothstep(2.5 * aa, 3.5 * aa, depth)) * lively;
+	float edge = 1.0 - smoothstep(2.5 * aa, 3.5 * aa, depth);
 	wcol = mix(wcol, cDeep, 0.35 * line * (1.0 - edge));              // submerged contours
 
 	float water = smoothstep(-aa, aa, depth);
@@ -172,52 +158,24 @@ void main() {
 	// crossfade either side of it with no jump.
 	float rising = 0.5 + 0.5 * uRate;
 	float toward = hiZone > loZone ? rising : 1.0 - rising;
-	// None near text: a magenta band across a word is one more color for
-	// the letters to sit on.
-	float tint = stepped * mix(0.22, 0.46, toward) * lively;
+	float tint = stepped * mix(0.22, 0.46, toward);
 	col = mix(col, cPop, tint);
 	under = mix(under, cPop, tint);
 
 	// Text. The name and tagline take one ink over water and another over dry
 	// land, so letters split exactly along the waterline. Each theme's pair
-	// is checked against every flat color it can sit on (worst case 4.65:1
-	// dark, 5.97:1 light). The ink is chosen by region. A per-pixel contrast
-	// test doesn't work in dark mode, where land and water are both dark: it
-	// would only flip on the keyline.
+	// was checked against the land and water bands (worst case 4.65:1 dark,
+	// 5.97:1 light). The thin edge line is lower contrast where it passes
+	// under a letter. The ink is chosen by region. A per-pixel contrast test
+	// doesn't work in dark mode, where land and water are both dark: it would
+	// only flip on the edge line.
 	if (inText) {
-		vec2 tp = (px - uTextRect.xy) / uTextRect.zw;
-		vec4 m = tp == clamp(tp, 0.0, 1.0) ? texture(uText, tp) : vec4(0.0);
+		vec4 m = texture(uText, tp);
 		col = mix(col, mix(cInk, mix(cInkLand, cInkWater, water), uTextIn), m.r);
 		col = mix(col, mix(cDim, bestInk(under, vec3(0.0), vec3(1.0)), uTextIn), m.g);
 	}
 
 	outColor = vec4(col, 1.0);
-}`;
-
-// Builds the input for the text blur at reduced resolution. The readout goes
-// in as a flat bar.
-export const FRAG_BLUR_SOURCE = /* glsl */ `#version 300 es
-precision highp float;
-precision highp sampler2D;
-out vec4 outColor;
-
-uniform sampler2D uText;
-uniform float uScale;      // device px per output pixel
-uniform vec2 uOffset;      // the mask's top-left, in device px from this target's
-uniform vec4 uBar;         // x0, y0, x1, y1 in device px from this target's top-left
-uniform float uBarValue;
-
-void main() {
-	vec2 p = gl_FragCoord.xy * uScale;
-	vec2 size = vec2(textureSize(uText, 0));
-	// Four bilinear taps average the block of mask texels under this pixel.
-	vec4 m = vec4(0.0);
-	for (int i = 0; i < 4; i++) {
-		vec2 q = p - uOffset + vec2(i % 2 == 0 ? -0.25 : 0.25, i < 2 ? -0.25 : 0.25) * uScale;
-		if (q == clamp(q, vec2(0.0), size)) m += 0.25 * texture(uText, q / size);
-	}
-	float bar = p.x >= uBar.x && p.y >= uBar.y && p.x < uBar.z && p.y < uBar.w ? uBarValue : 0.0;
-	outColor = vec4(max(m.r, bar));
 }`;
 
 // One direction of a Gaussian blur. Run it twice, across and then down.

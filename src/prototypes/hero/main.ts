@@ -4,7 +4,6 @@ import { makeColors, type RGB } from "./color";
 import {
 	FRAG,
 	FRAG_BLUR,
-	FRAG_BLUR_SOURCE,
 	FRAG_TERRAIN_FINISH,
 	FRAG_TERRAIN_NOISE,
 	FRAG_VALLEYS,
@@ -85,7 +84,7 @@ const palettes: Record<"light" | "dark", Record<string, RGB>> = {
 	},
 };
 
-// Float render targets let the blurs and the terrain bake run on the GPU.
+// Float render targets let the terrain bake run on the GPU.
 const floatTargets = !!(gl.getExtension("EXT_color_buffer_float") || gl.getExtension("EXT_color_buffer_half_float"));
 const seed = Number(params.get("seed") ?? 11);
 // ?bake=gpu or ?bake=cpu picks how the terrain's valleys are stamped in.
@@ -154,14 +153,11 @@ function finish({ program, shaders }: Pending): Shader {
 const pending = {
 	map: startProgram(FRAG),
 	blur: startProgram(FRAG_BLUR),
-	blurSource: startProgram(FRAG_BLUR_SOURCE),
 	// The terrain bake's three, when it runs on the GPU.
 	bake: bakeMode === "cpu" ? [] : [startProgram(FRAG_TERRAIN_NOISE), startProgram(FRAG_VALLEYS, VERT_VALLEYS), startProgram(FRAG_TERRAIN_FINISH)],
 };
 // The drainage tree is plain JavaScript, so it is built while they compile.
 const valleys = buildValleys(seed);
-// The first frame needs all of them except the text blur's input, which
-// can arrive later along with the fonts.
 const yielded = performance.now();
 await compiled(pending.map, pending.blur, ...pending.bake);
 const resumed = performance.now();
@@ -179,13 +175,11 @@ gl.bindVertexArray(fullScreen);
 // Texture units.
 const HEIGHT = 0;
 const TEXT = 1;
-const BLUR = 2;
-const SCRATCH = 3; // whatever a render pass is reading from
+const SCRATCH = 2; // whatever a render pass is reading from
 
 // ---- rendering into textures
-// Blurs run on the GPU as render passes. They need float targets to stay
-// smooth at the low thresholds the map shader reads them at. Without them
-// they fall back to 8 bits, which shows slight banding.
+// The terrain bake renders into float textures. Without float targets the
+// bake runs in JavaScript instead, and nothing renders into textures.
 const fbo = gl.createFramebuffer();
 
 function createTarget(unit = SCRATCH, wrap: number = gl!.CLAMP_TO_EDGE) {
@@ -390,11 +384,8 @@ let baked = `${compileNote} · ${valleys.count.toLocaleString()} valleys in ${va
 // and is made transparent while the canvas draws the visible version. Each
 // word is rasterized at the exact position the browser laid it out.
 //
-// Two textures. The mask holds the glyphs and fits them closely. The blur
-// covers a slightly wider rectangle and gives the shader the zone around
-// the text where the map calms down. Only a change in layout rebuilds them. Scrolling
-// moves both rectangles, and a new tide readout redraws one strip of the
-// mask.
+// The mask fits the glyphs closely. Only a change in layout rebuilds it.
+// Scrolling moves it, and a new tide readout redraws one strip of it.
 const stage = document.querySelector<HTMLElement>(".stage")!;
 const textEls = Array.from(document.querySelectorAll<HTMLElement>("[data-hero-text]"));
 const eyebrow = textEls.find((el) => el.dataset.heroText === "small")!;
@@ -408,17 +399,11 @@ gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-const blurTexture = createTarget(BLUR);
-const blurInput = createTarget();
-const blurScratch = createTarget();
 
 // Mask channels: red for the name and tagline, green for small text.
 const TIER_COLOR: Record<string, string> = { display: "#f00", lead: "#f00", small: "#0f0" };
 const MARGIN = 4; // CSS px kept clear around the glyphs in the mask
-const PAD = 48; // CSS px around the mask for the blur to fade out in
 const SLOT = 64; // CSS px. The readout's reserved width changes in these steps.
-const BLUR_DOWNSCALE = 4; // the blurs are smooth, so they don't need full resolution
-const BAR = 0.3; // the readout's weight in the blur, about the ink of small text
 
 interface Rect {
 	x: number;
@@ -426,11 +411,9 @@ interface Rect {
 	w: number;
 	h: number;
 }
-// Both in device px from the top-left of the document, so scrolling only
-// changes an offset.
+// In device px from the top-left of the document, so scrolling only changes
+// an offset.
 let maskRect: Rect = { x: 0, y: 0, w: 1, h: 1 };
-let blurRect: Rect = { x: 0, y: 0, w: 1, h: 1 };
-let blurSize = [1, 1];
 let slotWidth = 0; // CSS px reserved for the readout
 let stripTop = 0; // mask row where the eyebrow's strip starts
 let layoutDirty = true;
@@ -438,12 +421,6 @@ let readoutDirty = false;
 let fontsReady = false;
 document.fonts.ready.then(() => {
 	fontsReady = true;
-	layoutDirty = true;
-	wake();
-});
-let blurSource: Shader | undefined;
-compiled(pending.blurSource).then(() => {
-	blurSource = finish(pending.blurSource);
 	layoutDirty = true;
 	wake();
 });
@@ -486,14 +463,13 @@ function drawWords(ctx: CanvasRenderingContext2D, el: HTMLElement, scale: number
 	}
 }
 
-// Full rebuild: measure the text, rasterize all of it and blur it.
+// Full rebuild: measure the text and rasterize all of it.
 function layoutText() {
 	// Nothing to measure against while the canvas has no size (a tab opened
 	// in the background, for instance). Stay dirty and try again next frame.
 	if (!canvas.clientWidth || !canvas.width) return;
 	const scale = deviceScale();
 	let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
-	let bar = { left: 0, right: 0 };
 	for (const el of textEls) {
 		const box = el.getBoundingClientRect();
 		const ext = extent(el);
@@ -505,8 +481,7 @@ function layoutText() {
 			// The readout gets a slot a little wider than it needs, so most
 			// changes fit without moving anything else.
 			slotWidth = Math.ceil((ext.right - ext.left) / SLOT) * SLOT;
-			bar = { left: ext.left, right: ext.left + slotWidth };
-			right = Math.max(right, bar.right);
+			right = Math.max(right, ext.left + slotWidth);
 		} else {
 			right = Math.max(right, ext.right);
 		}
@@ -531,33 +506,6 @@ function layoutText() {
 	strip.width = mask.width;
 	strip.height = Math.ceil(line.bottom * scale) - Math.floor(line.top * scale);
 
-	// Blur. The readout goes in as a flat bar the width of its slot, so the
-	// blur does not depend on what the readout says.
-	const D = BLUR_DOWNSCALE;
-	const pad = Math.round((PAD * scale) / D);
-	const size = [Math.ceil(mask.width / D) + 2 * pad, Math.ceil(mask.height / D) + 2 * pad];
-	if (size[0] !== blurSize[0] || size[1] !== blurSize[1]) {
-		resizeTarget(blurTexture, size, BLUR);
-		resizeTarget(blurInput, size);
-		resizeTarget(blurScratch, size);
-		blurSize = size;
-	}
-	renderPass(blurInput, size, blurSource!, null, (u) => {
-		gl!.uniform1i(u.uText, TEXT);
-		gl!.uniform1f(u.uScale, D);
-		gl!.uniform2f(u.uOffset, pad * D, pad * D);
-		gl!.uniform4f(
-			u.uBar,
-			pad * D + bar.left * scale - x0,
-			pad * D + stripTop,
-			pad * D + bar.right * scale - x0,
-			pad * D + stripTop + strip.height,
-		);
-		gl!.uniform1f(u.uBarValue, BAR);
-	});
-	// 12 CSS px, in the blur texture's texels.
-	gaussian(blurInput, blurScratch, blurTexture, size, (12 * scale) / D + 0.5, [true, true, true, true]);
-	blurRect = { x: maskRect.x - pad * D, y: maskRect.y - pad * D, w: size[0] * D, h: size[1] * D };
 	layoutDirty = readoutDirty = false;
 }
 
@@ -639,11 +587,11 @@ function draw(now: number) {
 	const resized = resize();
 	const tide = currentTide();
 
-	// The canvas takes over the text once the fonts and the text shader are
-	// ready and the map has finished fading in. Until then the ordinary DOM
+	// The canvas takes over the text once the fonts are ready and the map
+	// has finished fading in. Until then the ordinary DOM
 	// text shows. Nothing eases with reduced motion or in a hidden tab.
 	const still = reduceMotion.matches || document.hidden;
-	const textOn = fontsReady && !!blurSource && canvasText && now >= shownAt + (still ? 0 : FADE_MS);
+	const textOn = fontsReady && canvasText && now >= shownAt + (still ? 0 : FADE_MS);
 	stage.classList.toggle("on-canvas", textOn);
 	if (!textOn) textSince = 0;
 	else if (!textSince) textSince = now;
@@ -671,13 +619,10 @@ function draw(now: number) {
 	gl!.uniform1i(uniforms.uHeight, HEIGHT);
 	gl!.uniform2f(uniforms.uHeightSize, heightSize[0], heightSize[1]);
 	gl!.uniform1i(uniforms.uText, TEXT);
-	gl!.uniform1i(uniforms.uBlur, BLUR);
-	gl!.uniform2f(uniforms.uBlurSize, blurSize[0], blurSize[1]);
 	gl!.uniform1f(uniforms.uTextOn, textOn ? 1 : 0);
 	gl!.uniform1f(uniforms.uTextIn, settle * settle * (3 - 2 * settle));
 	const [sx, sy] = scrollOffset(deviceScale());
 	gl!.uniform4f(uniforms.uTextRect, maskRect.x - sx, maskRect.y - sy, maskRect.w, maskRect.h);
-	gl!.uniform4f(uniforms.uBlurRect, blurRect.x - sx, blurRect.y - sy, blurRect.w, blurRect.h);
 	for (const [name, c] of Object.entries(colors)) gl!.uniform3f(uniforms[name], c[0], c[1], c[2]);
 	gl!.drawArrays(gl!.TRIANGLES, 0, 3);
 	if (!firstFrame) {
