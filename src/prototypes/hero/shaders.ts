@@ -38,7 +38,7 @@ float vnoise(vec2 p) {
 	return mix(mix(hash21(i), hash21(i + vec2(1, 0)), u.x),
 	           mix(hash21(i + vec2(0, 1)), hash21(i + vec2(1, 1)), u.x), u.y);
 }
-uniform sampler2D uHeight;   // R = the ground, G = a smoothed copy of it
+uniform sampler2D uHeight;
 uniform vec2 uHeightSize;
 uniform float uNext;   // level of the next high or low, 0..1
 
@@ -113,10 +113,9 @@ void main() {
 	// undulates very slightly...
 	f += lively * 0.0026 * vec2(sin(uTime * 0.19 + f.y * 9.0), cos(uTime * 0.155 + f.x * 8.0));
 	vec2 uv = vec2(f.x / uFieldAspect, f.y);
-	vec2 heights = bicubic(uHeight, uHeightSize, uv).rg;
-	// Near text, use the smoothed copy of the ground, so the waterline crosses
-	// the letters as one clean curve instead of a string of small notches.
-	float h = mix(heights.r, heights.g, calm);
+	// The ground is the same with or without text over it. The letters split
+	// along the real waterline.
+	float h = bicubic(uHeight, uHeightSize, uv).r;
 
 	// ...the water's edge laps in and out, out of step from place to place...
 	float lap = lively * 0.0044 * sin(uTime * 0.57 + vnoise(f * 2.5) * 6.283);

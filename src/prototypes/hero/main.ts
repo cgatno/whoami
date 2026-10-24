@@ -251,14 +251,11 @@ function gaussian(
 }
 
 // ---- terrain, baked once at load
-// The texture holds the ground twice: R as baked, and G blurred. Near text
-// the map shader reads the blurred copy so the waterline stays smooth.
-const SMOOTH_SIGMA = 13.4; // texels
 const heightSize = [valleys.width, valleys.height];
 const heightTexture = createTarget(HEIGHT, gl.MIRRORED_REPEAT);
-gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RG16F, heightSize[0], heightSize[1]);
+gl.texStorage2D(gl.TEXTURE_2D, 1, gl.R16F, heightSize[0], heightSize[1]);
 
-/** Stamps the valleys into heightTexture's R and G with render passes. See the terrain shaders. */
+/** Stamps the valleys into heightTexture with render passes. See the terrain shaders. */
 function bakeOnGpu(mark: (stage: string) => void = () => {}) {
 	const [w, h] = heightSize;
 	const [noiseShader, valleyShader, finishShader] = pending.bake.map(finish);
@@ -320,7 +317,7 @@ function bakeOnGpu(mark: (stage: string) => void = () => {}) {
 		gl!.uniform1i(u.uDepth, SCRATCH);
 		gl!.uniform1i(u.uNoise, NOISE);
 	});
-	gaussian(raw, scratch, heightTexture, heightSize, SHAPE.BLUR_SIGMA, [true, true, false, false]);
+	gaussian(raw, scratch, heightTexture, heightSize, SHAPE.BLUR_SIGMA, [true, false, false, false]);
 	mark("finish");
 
 	for (const texture of [noise, depth, raw, scratch]) gl!.deleteTexture(texture);
@@ -330,13 +327,11 @@ function bakeOnGpu(mark: (stage: string) => void = () => {}) {
 	for (const shader of [noiseShader, valleyShader, finishShader]) gl!.deleteProgram(shader.program);
 }
 
-/** The JavaScript bake, uploaded into heightTexture's R and G. */
+/** The JavaScript bake, uploaded into heightTexture. */
 function bakeOnCpu() {
 	const { data } = generateHeight(valleys);
-	const both = new Float32Array(data.length * 2);
-	for (let i = 0; i < data.length; i++) both[i * 2] = both[i * 2 + 1] = data[i];
 	gl!.activeTexture(gl!.TEXTURE0 + HEIGHT);
-	gl!.texSubImage2D(gl!.TEXTURE_2D, 0, 0, 0, heightSize[0], heightSize[1], gl!.RG, gl!.FLOAT, both);
+	gl!.texSubImage2D(gl!.TEXTURE_2D, 0, 0, 0, heightSize[0], heightSize[1], gl!.RED, gl!.FLOAT, data);
 	return data;
 }
 
@@ -387,14 +382,6 @@ let baked = `${compileNote} · ${valleys.count.toLocaleString()} valleys in ${va
 			baked += ` · cpu ${(performance.now() - t1).toFixed(0)} ms · mean diff ${(sum / cpu.length).toExponential(2)}, max ${max.toExponential(2)} (${maxInside.toExponential(2)} away from the edges)`;
 			console.log(baked);
 		}
-	}
-	// Without float targets G stays a plain copy, and the waterline near
-	// text is a little rougher.
-	if (floatTargets) {
-		const scratch = createTarget(SCRATCH, gl.MIRRORED_REPEAT);
-		resizeTarget(scratch, heightSize);
-		gaussian(heightTexture, scratch, heightTexture, heightSize, SMOOTH_SIGMA, [false, true, false, false]);
-		gl.deleteTexture(scratch);
 	}
 }
 
