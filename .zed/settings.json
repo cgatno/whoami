@@ -8,5 +8,9 @@
       "enabled": true,
       "url": "https://mcp.docs.astro.build/mcp",
     },
+    "Cloudflare docs": {
+      "enabled": true,
+      "url": "https://docs.mcp.cloudflare.com/mcp",
+    },
   },
 }
