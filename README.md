@@ -1,43 +1,38 @@
-# Astro Starter Kit: Minimal
+# christiangaetano.com
 
-```sh
-npm create astro@latest -- --template minimal
-```
+My personal site. It's built with Astro and runs on Cloudflare Workers.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Commands
 
-## 🚀 Project Structure
+| Command            | Action                                                       |
+| :----------------- | :----------------------------------------------------------- |
+| `npm install`      | Install dependencies                                         |
+| `npm run dev`      | Start the dev server at `localhost:4321`                     |
+| `npm run build`    | Build the site to `./dist/`                                  |
+| `npm run preview`  | Serve the build locally                                      |
+| `npm run palettes` | Regenerate `src/styles/palette.css` from `scripts/palettes.mjs` |
 
-Inside of your Astro project, you'll see the following folders and files:
+Change colors in `scripts/palettes.mjs`. The CSS file is generated.
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+## Layout
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+- `src/pages/index.astro` is the homepage.
+- `src/components/Hero.astro` and `src/hero/` are the homepage's tidal map.
+- `src/styles/` has the global CSS, in cascade layers.
+- `/design` is the style reference, `/design/preview` shows the styles on
+  sample content, and `/design/hero` is the hero with controls and timings.
+  None of them are in the sitemap.
+- `docs/inspiration.md` has the references and design decisions.
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+## Deploying
 
-Any static assets, like images, can be placed in the `public/` directory.
+The site runs at `whoami.cgatno.workers.dev` until the domain moves over.
+Until then every response carries `X-Robots-Tag: noindex` (set in
+`public/_headers`).
 
-## 🧞 Commands
+To move christiangaetano.com over:
 
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+1. Set `site` in `astro.config.mjs` to `https://christiangaetano.com`.
+2. Set `workers_dev: false` in `wrangler.jsonc`.
+3. Remove the noindex rule from `public/_headers`.
+4. Point DNS at the Worker.

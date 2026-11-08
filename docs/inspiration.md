@@ -144,7 +144,15 @@ map of a watershed built from the same branching network, and the tide floods
 it valley by valley. It is drawn flat: stepped bands of water, one thin line at
 the edge, no glow. Magenta marks the ground only the highest and lowest tides
 reach. The name is drawn in the canvas so it can change ink where the water
-crosses it. A to D are still on the page for comparison.
+crosses it.
+
+Update, 2026-11-08: the hero is the homepage now. A to D and the Island and
+Hybrid text treatments are gone, and the name uses Split only. The map has to
+look the same with or without text over it, so nothing is calmed or smoothed
+near the name. Real NOAA elevation for Carkeek Park, a procedural layout
+based on Carkeek, and hints after the South Sound inlets were all tried and
+set aside. They are on the `hero-experiments` branch. The original terrain
+stays, turned so the sea comes from the west.
 
 Open: layout of the name against the map, whether high tide is too nearly all
 water, and how much of the text work can move to the GPU.
