@@ -88,10 +88,11 @@ float toL(float level) { return mix(0.09, 0.40, level); }
 
 void main() {
 	// A rotated, zoomed-in window onto the field, so no edge of the view is
-	// "the sea" and nothing hangs straight down from the top.
+	// "the sea" and nothing hangs straight down from the top. It faces the
+	// sea to the west, the way Seattle faces the Sound.
 	vec2 s = gl_FragCoord.xy / uRes;
 	vec2 c = (s - 0.5) * vec2(uRes.x / uRes.y, 1.0);
-	const float ANGLE = -0.62, ZOOM = 0.66;
+	const float ANGLE = 2.5216, ZOOM = 0.66; // half a turn from -0.62
 	mat2 rot = mat2(cos(ANGLE), -sin(ANGLE), sin(ANGLE), cos(ANGLE));
 	vec2 f = rot * c * ZOOM + vec2(0.5 * uFieldAspect, 0.50);
 	float dir = uRate >= 0.0 ? 1.0 : -1.0;
