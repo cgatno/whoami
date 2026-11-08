@@ -1,6 +1,7 @@
 // Tide state for Seattle from a baked snapshot of NOAA hi/lo predictions.
-// PROTOTYPE: the snapshot is a static file fetched by hand. The real version
-// should fetch at build time.
+// The snapshot is a static file fetched by hand and runs through March 2027.
+// After that the hero falls back to a rough model. It should be fetched at
+// build time instead.
 import data from "./tides-seattle.json";
 
 export interface TideState {

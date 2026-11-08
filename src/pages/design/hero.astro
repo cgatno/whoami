@@ -1,20 +1,22 @@
 ---
+import Hero from "../../components/Hero.astro";
 import Base from "../../layouts/Base.astro";
 
-// Hero prototype: a full-viewport tidal map driven by Seattle tide
-// predictions. It's a working page under /design, so it's excluded from the
-// sitemap. The prototype code lives in src/prototypes/hero/.
+// Hero lab: the homepage hero with controls for the tide, the canvas text
+// and the theme, plus timings. It's a working page under /design, so it's
+// excluded from the sitemap.
+//
+// URL flags, here or on the homepage: ?tide=0..1 pins the tide, ?seed=
+// picks another terrain, ?domtext leaves the text to the page, ?bake=cpu
+// or ?bake=compare tries the JavaScript terrain bake, and ?coldshaders and
+// ?blocking measure shader compiles.
 ---
 
-<Base title="Hero prototype · whoami">
+<Base title="Hero lab · whoami">
 	<meta slot="head" name="robots" content="noindex" />
 
-	<canvas id="hero" aria-hidden="true"></canvas>
-
-	<main class="stage">
-		<p class="eyebrow" data-hero-text="small">Seattle tide · <span id="tide-readout">…</span></p>
-		<h1 data-hero-text="display">Christian Gaetano</h1>
-		<p class="lead" data-hero-text="lead">Software engineer &amp; dabbling designer.</p>
+	<main>
+		<Hero title="Christian Gaetano" lead="Software engineer & dabbling designer." />
 	</main>
 
 	<div class="controls">
@@ -28,81 +30,9 @@ import Base from "../../layouts/Base.astro";
 		<button type="button" id="hero-theme">Theme</button>
 		<span id="hero-stats"></span>
 	</div>
-
-	<script>
-		import "../../prototypes/hero/main";
-	</script>
 </Base>
 
 <style>
-	#hero {
-		position: fixed;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		display: block;
-	}
-
-	/* An undrawn canvas is black. Keep it transparent until the first frame,
-	   then fade the map in. The duration matches FADE_MS in the script. */
-	#hero {
-		opacity: 0;
-		transition: opacity 400ms ease-out;
-	}
-
-	#hero.ready {
-		opacity: 1;
-	}
-
-	.stage {
-		position: relative;
-		max-width: 64rem;
-		margin-inline: auto;
-		padding: var(--space-8) var(--space-4) 0;
-	}
-
-	/* While the canvas draws the text, the real text stays in place for
-	   screen readers, selection and search, but is not painted. If the
-	   visitor has forced colors on, leave their text alone. */
-	.stage.on-canvas [data-hero-text] {
-		color: transparent;
-	}
-
-	.stage.on-canvas [data-hero-text]::selection {
-		color: transparent;
-	}
-
-	@media (forced-colors: active) {
-		.stage.on-canvas [data-hero-text] {
-			color: CanvasText;
-		}
-	}
-
-	.eyebrow,
-	.controls {
-		font-family: var(--font-ui);
-		font-variation-settings: var(--axes-ui);
-		font-size: var(--text-meta);
-		font-weight: 500;
-	}
-
-	.eyebrow {
-		color: var(--dim);
-		margin-block-end: var(--space-3);
-	}
-
-	h1 {
-		font-size: var(--text-display);
-		line-height: var(--leading-display);
-		margin-block-end: var(--space-4);
-	}
-
-	.lead {
-		font-size: var(--text-lead);
-		line-height: var(--leading-lead);
-		max-width: var(--measure-narrow);
-	}
-
 	.controls {
 		position: fixed;
 		inset: auto var(--space-3) var(--space-3) var(--space-3);
@@ -111,6 +41,10 @@ import Base from "../../layouts/Base.astro";
 		gap: var(--space-2) var(--space-4);
 		align-items: center;
 		padding: var(--space-2) var(--space-3);
+		font-family: var(--font-ui);
+		font-variation-settings: var(--axes-ui);
+		font-size: var(--text-meta);
+		font-weight: 500;
 		background: color-mix(in oklab, var(--ground) 86%, transparent);
 		border: 1px solid var(--rule);
 		border-radius: var(--radius);

@@ -1,5 +1,6 @@
-// Prototype harness: one full-viewport WebGL2 canvas and controls for the
-// tide.
+// The hero: one full-viewport WebGL2 canvas behind the page's text. See
+// components/Hero.astro. The hero lab (/design/hero) adds controls and
+// timings, which this picks up when they are on the page.
 import { makeColors, type RGB } from "./color";
 import {
 	FRAG,
@@ -29,7 +30,7 @@ const began = performance.now();
 
 const canvas = document.querySelector<HTMLCanvasElement>("#hero")!;
 const readout = document.querySelector<HTMLElement>("#tide-readout")!;
-const stats = document.querySelector<HTMLElement>("#hero-stats")!;
+const stats = document.querySelector<HTMLElement>("#hero-stats"); // lab only
 const root = document.documentElement;
 const params = new URLSearchParams(location.search);
 
@@ -43,7 +44,7 @@ const gl = canvas.getContext("webgl2", {
 	powerPreference: "low-power",
 });
 if (!gl) {
-	stats.textContent = "WebGL2 is not available in this browser.";
+	if (stats) stats.textContent = "WebGL2 is not available in this browser.";
 	throw new Error("WebGL2 unavailable");
 }
 
@@ -571,6 +572,7 @@ const start = performance.now();
 const FADE_MS = 400; // the map's fade-in. Keep in step with the transition on #hero.
 const HANDOFF_MS = 600; // how long the text takes to settle into its split colors
 let shownAt = Infinity; // when the first frame went up
+let lost = false; // the WebGL context is gone. See the webglcontextlost handler.
 let textSince = 0; // when the canvas took over the text, or 0 while the page has it
 let firstFrame = "";
 let frames = 0;
@@ -584,6 +586,7 @@ function timed(kind: keyof typeof textWork, work: () => void) {
 	textWork[kind][1] += performance.now() - t0;
 }
 function draw(now: number) {
+	if (lost) return;
 	const resized = resize();
 	const tide = currentTide();
 
@@ -636,10 +639,10 @@ function draw(now: number) {
 		setTimeout(wake, FADE_MS + 20);
 		const busy = yielded - began + (performance.now() - resumed);
 		firstFrame = `first frame ${(performance.now() - scriptStart).toFixed(0)} ms after the script started, main thread busy for ${busy.toFixed(0)} ms of it`;
-		console.log(`${firstFrame} · ${baked}`);
+		if (stats) console.log(`${firstFrame} · ${baked}`);
 	}
 	frames++;
-	if (now - lastStat > 1000) {
+	if (stats && now - lastStat > 1000) {
 		const work = Object.entries(textWork)
 			.filter(([, [n]]) => n)
 			.map(([kind, [n, ms]]) => ` · ${kind} ×${n}, ${(ms / n).toFixed(1)} ms each`)
@@ -674,35 +677,46 @@ new MutationObserver(wake).observe(root, { attributes: true, attributeFilter: ["
 new ResizeObserver(wake).observe(canvas);
 setInterval(() => reduceMotion.matches && wake(), 30000);
 
-// ---- controls
+// If the browser takes the context away (a GPU reset, or reclaiming memory),
+// fall back to the plain page: fade the map out and give the text back to
+// the DOM. Nothing rebuilds the map.
+canvas.addEventListener("webglcontextlost", () => {
+	lost = true;
+	cancelAnimationFrame(raf);
+	canvas.classList.remove("ready");
+	stage.classList.remove("on-canvas");
+});
+
+// ---- controls, on the hero lab only
+const modeButtons = document.querySelectorAll<HTMLButtonElement>("[data-mode]");
+const slider = document.querySelector<HTMLInputElement>("#tide-scrub");
+const canvasTextBox = document.querySelector<HTMLInputElement>("#hero-canvas-text");
 function sync() {
-	document.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach((b) =>
-		b.setAttribute("aria-pressed", String(b.dataset.mode === mode)),
-	);
-	const slider = document.querySelector<HTMLInputElement>("#tide-scrub")!;
-	slider.disabled = mode !== "scrub";
-	slider.value = String(scrub);
+	modeButtons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
+	if (slider) {
+		slider.disabled = mode !== "scrub";
+		slider.value = String(scrub);
+	}
 	wake();
 }
-document.querySelectorAll<HTMLButtonElement>("[data-mode]").forEach((b) =>
+modeButtons.forEach((b) =>
 	b.addEventListener("click", () => {
 		mode = b.dataset.mode as Mode;
 		if (mode === "lapse") lapseStart = performance.now();
 		sync();
 	}),
 );
-const canvasTextBox = document.querySelector<HTMLInputElement>("#hero-canvas-text")!;
-canvasTextBox.checked = canvasText;
-canvasTextBox.addEventListener("change", () => {
+canvasTextBox?.addEventListener("change", () => {
 	canvasText = canvasTextBox.checked;
 	layoutDirty = true;
 	wake();
 });
-document.querySelector<HTMLInputElement>("#tide-scrub")!.addEventListener("input", (e) => {
-	scrub = Number((e.target as HTMLInputElement).value);
+if (canvasTextBox) canvasTextBox.checked = canvasText;
+slider?.addEventListener("input", () => {
+	scrub = Number(slider.value);
 	wake();
 });
-document.querySelector<HTMLButtonElement>("#hero-theme")!.addEventListener("click", () => {
+document.querySelector<HTMLButtonElement>("#hero-theme")?.addEventListener("click", () => {
 	root.dataset.theme = isDark() ? "light" : "dark";
 });
 

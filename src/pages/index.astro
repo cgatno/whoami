@@ -1,28 +1,10 @@
 ---
+import Hero from "../components/Hero.astro";
 import Base from "../layouts/Base.astro";
 ---
 
 <Base title="Christian Gaetano">
-	<main class="flow">
-		<h1>Christian Gaetano</h1>
-		<p class="ui">Recursive at MONO 0, for UI chrome</p>
-		<p>Newsreader is the body face, with <em>a real italic</em>.</p>
-		<h2>Familjen Grotesk is for headings</h2>
-		<pre><code>// Recursive at MONO 1, for code
-const fonts = ["Familjen Grotesk", "Newsreader", "Recursive"];</code></pre>
+	<main>
+		<Hero title="Christian Gaetano" lead="Software engineer & dabbling designer." />
 	</main>
 </Base>
-
-<style>
-	main {
-		max-width: var(--measure);
-		margin-inline: auto;
-		padding: var(--space-7) var(--space-3);
-	}
-
-	.ui {
-		font-family: var(--font-ui);
-		font-variation-settings: var(--axes-ui);
-		font-size: var(--text-meta);
-	}
-</style>
