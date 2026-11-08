@@ -14,6 +14,9 @@ My personal site. It's built with Astro and runs on Cloudflare Workers.
 
 Change colors in `scripts/palettes.mjs`. The CSS file is generated.
 
+After cloning, run `pre-commit install` once. It checks every commit for
+secrets with gitleaks (`brew install pre-commit gitleaks`).
+
 ## Layout
 
 - `src/pages/index.astro` is the homepage.
@@ -22,7 +25,6 @@ Change colors in `scripts/palettes.mjs`. The CSS file is generated.
 - `/design` is the style reference, `/design/preview` shows the styles on
   sample content, and `/design/hero` is the hero with controls and timings.
   None of them are in the sitemap.
-- `docs/inspiration.md` has the references and design decisions.
 
 ## Deploying
 

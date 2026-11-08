@@ -1,0 +1,10 @@
+# Run `pre-commit install` once per clone. The hook uses the gitleaks on
+# your PATH (`brew install gitleaks`), so nothing is downloaded.
+repos:
+  - repo: local
+    hooks:
+      - id: gitleaks
+        name: Check staged changes for secrets
+        entry: gitleaks git --pre-commit --staged --redact --no-banner
+        language: system
+        pass_filenames: false
