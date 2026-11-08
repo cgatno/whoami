@@ -28,9 +28,11 @@ secrets with gitleaks (`brew install pre-commit gitleaks`).
 
 ## Deploying
 
-The site runs at `whoami.cgatno.workers.dev` until the domain moves over.
-Until then every response carries `X-Robots-Tag: noindex` (set in
-`public/_headers`).
+Cloudflare Workers Builds deploys from GitHub. Pushing `main` deploys the
+site to `whoami.cgatno.workers.dev`. Pushing any other branch uploads a
+preview version instead, served at `<branch>-whoami.cgatno.workers.dev`.
+Until the domain moves over, every response carries `X-Robots-Tag: noindex`
+(set in `public/_headers`).
 
 To move christiangaetano.com over:
 
