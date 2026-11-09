@@ -1,6 +1,8 @@
-// Draws the shoreline icon and writes the favicon files into public/:
-// favicon.svg and favicon.ico for browser tabs, apple-touch-icon.png for
-// home screens. Run with `npm run favicon`.
+// Draws the shoreline icon and writes the favicon files: favicon.svg for
+// browser tabs and apple-touch-icon.png for home screens into src/assets/,
+// where Base.astro imports them so their URLs change with their contents,
+// and favicon.ico into public/, since some clients only ever ask for
+// /favicon.ico. Run with `npm run favicon`.
 //
 // Everything comes from one shoreline curve. The water bands, the magenta
 // high-tide line and the land contours are offsets of it, so the spacing
@@ -12,7 +14,7 @@
 // version. The colors are the hero's dark palette (see src/hero/main.ts).
 //
 // PNG and ICO output uses sharp, which Astro installs.
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import sharp from "sharp";
 
 const GROUND = "#0b1616";
@@ -119,7 +121,8 @@ function ico(images) {
 const sizes = [16, 32, 48];
 const tabPngs = await Promise.all(sizes.map(async (size) => ({ size, data: await png(tab, size) })));
 
-await writeFile("public/favicon.svg", tab);
+await mkdir("src/assets", { recursive: true });
+await writeFile("src/assets/favicon.svg", tab);
+await writeFile("src/assets/apple-touch-icon.png", await png(full, 180));
 await writeFile("public/favicon.ico", ico(tabPngs));
-await writeFile("public/apple-touch-icon.png", await png(full, 180));
-console.log("Wrote public/favicon.svg, public/favicon.ico and public/apple-touch-icon.png");
+console.log("Wrote src/assets/favicon.svg, src/assets/apple-touch-icon.png and public/favicon.ico");

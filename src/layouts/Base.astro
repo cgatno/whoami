@@ -2,6 +2,8 @@
 // The document shell for every page. It owns the global CSS and font
 // loading, so pages don't import either themselves.
 import { Font } from "astro:assets";
+import appleTouchIcon from "../assets/apple-touch-icon.png";
+import favicon from "../assets/favicon.svg";
 import "../styles/global.css";
 
 interface Props {
@@ -23,11 +25,13 @@ const { title, description } = Astro.props;
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 		{description && <meta name="description" content={description} />}
-		{/* Made by scripts/favicon.mjs. The .ico is for browsers without SVG
-		    favicons. Its sizes attribute keeps Chrome from picking it over the SVG. */}
+		{/* Made by scripts/favicon.mjs. The SVG and PNG are imported, so their
+		    URLs change whenever they're redrawn and browsers fetch the new ones.
+		    The .ico stays at /favicon.ico for browsers without SVG favicons. Its
+		    sizes attribute keeps Chrome from picking it over the SVG. */}
 		<link rel="icon" href="/favicon.ico" sizes="32x32" />
-		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<link rel="icon" href={favicon.src} type="image/svg+xml" />
+		<link rel="apple-touch-icon" href={appleTouchIcon.src} />
 
 		{/* Preload the faces used above the fold. Newsreader is limited to
 		    `normal` because a bare `preload` would also preload the italic.

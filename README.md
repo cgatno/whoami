@@ -11,7 +11,7 @@ My personal site. It's built with Astro and runs on Cloudflare Workers.
 | `npm run build`    | Build the site to `./dist/`                                  |
 | `npm run preview`  | Serve the build locally                                      |
 | `npm run palettes` | Regenerate `src/styles/palette.css` from `scripts/palettes.mjs` |
-| `npm run favicon`  | Redraw the favicons in `public/` from `scripts/favicon.mjs`  |
+| `npm run favicon`  | Redraw the favicons from `scripts/favicon.mjs`                |
 
 Change colors in `scripts/palettes.mjs`. The CSS file is generated.
 
