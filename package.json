@@ -11,7 +11,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "generate-types": "wrangler types",
-    "palettes": "node scripts/palettes.mjs"
+    "palettes": "node scripts/palettes.mjs",
+    "favicon": "node scripts/favicon.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.6",
