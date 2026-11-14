@@ -27,7 +27,11 @@
 		--text-lead: 1.5rem; /*   24   Newsreader         10.22px  intro paragraph  */
 		--text-section: 1.75rem; /* 28  Familjen           14.00px  section heading */
 		--text-title: 2.5rem; /*  40   Familjen           20.00px  page/post title  */
-		--text-display: 4.5rem; /* 72   Familjen           36.00px  landing hero    */
+		--text-display: clamp(3.5rem, 2rem + 8vw, 4.5rem); /* 72 Familjen 36.00px landing hero */
+
+		/* Display reaches 72px at a 500px viewport and shrinks below that, so
+		   "Christian" fits on one line on a 320px phone instead of breaking
+		   mid-word. It bottoms out at 56px. */
 
 		/* ---- Line heights ----
 		 * Unitless so they inherit correctly. Body is 20px x 1.6 = 32px, which the
