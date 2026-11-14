@@ -3,6 +3,7 @@ import { defineConfig, fontProviders } from "astro/config";
 
 import cloudflare from "@astrojs/cloudflare";
 import sitemap from "@astrojs/sitemap";
+import { tides } from "./scripts/tides.mjs";
 
 // https://astro.build/config
 export default defineConfig({
@@ -27,6 +28,8 @@ export default defineConfig({
     // Matches on the path so it still works after `site` changes at cutover.
     sitemap({ filter: (page) => !new URL(page).pathname.startsWith("/design") }),
   ],
+  // The hero's tide predictions, fetched from NOAA at build time.
+  vite: { plugins: [tides()] },
   // Colors come from src/styles/syntax.css. <Code /> doesn't inherit this,
   // so pass theme="css-variables" there too.
   markdown: {

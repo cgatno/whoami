@@ -1,8 +1,7 @@
-// Tide state for Seattle from a baked snapshot of NOAA hi/lo predictions.
-// The snapshot is a static file fetched by hand and runs through March 2027.
-// After that the hero falls back to a rough model. It should be fetched at
-// build time instead.
-import data from "./tides-seattle.json";
+// Tide state for Seattle from NOAA hi/lo predictions, which the build fetches
+// for a year ahead (see scripts/tides.mjs). Past the end of them the hero
+// falls back to a rough model.
+import data from "virtual:tides";
 
 export interface TideState {
 	/** Height in feet above MLLW. */
