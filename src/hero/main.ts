@@ -34,6 +34,32 @@ const stats = document.querySelector<HTMLElement>("#hero-stats"); // lab only
 const root = document.documentElement;
 const params = new URLSearchParams(location.search);
 
+// ---- tide
+let mode: Mode = params.has("tide") ? "scrub" : "live";
+let scrub = Number(params.get("tide") ?? 0.5);
+let lapseStart = performance.now();
+
+const clock = new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", hour: "numeric", minute: "2-digit" });
+const day = new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", weekday: "short", hour: "numeric" });
+
+function currentTide() {
+	if (mode === "scrub") return { level: scrub, next: 0.8, rate: 0.6, label: `scrubbing · ${Math.round(scrub * 100)}% of range` };
+	// Time-lapse: one hour of tide per second, starting from now.
+	const when = mode === "lapse" ? new Date(Date.now() + (performance.now() - lapseStart) * 3600) : new Date();
+	const t = tideAt(when);
+	const trend = t.rate >= 0 ? "rising" : "falling";
+	const label =
+		mode === "lapse"
+			? `${day.format(when)} · ${t.height.toFixed(1)} ft · ${trend}`
+			: `${t.height.toFixed(1)} ft · ${trend} · ${t.next.type} ${t.next.height.toFixed(1)} ft at ${clock.format(t.next.time)}`;
+	return { level: t.level, next: t.nextLevel, rate: t.rate, label };
+}
+
+// The readout doesn't need the map, so fill it in before anything that can
+// fail. Without WebGL2 the draw loop never runs, so a timer keeps it current.
+const showTide = () => (readout.textContent = currentTide().label);
+showTide();
+
 // The map is one opaque full-screen quad, so the canvas needs no depth,
 // stencil or multisampling of its own.
 const gl = canvas.getContext("webgl2", {
@@ -45,6 +71,7 @@ const gl = canvas.getContext("webgl2", {
 });
 if (!gl) {
 	if (stats) stats.textContent = "WebGL2 is not available in this browser.";
+	setInterval(showTide, 60_000);
 	throw new Error("WebGL2 unavailable");
 }
 
@@ -532,30 +559,11 @@ addEventListener("scroll", () => wake(), { passive: true });
 new ResizeObserver(() => ((layoutDirty = true), wake())).observe(stage);
 
 // ---- state
-let mode: Mode = params.has("tide") ? "scrub" : "live";
-let scrub = Number(params.get("tide") ?? 0.5);
-let lapseStart = performance.now();
 // Off: the canvas leaves the text to the DOM and skips all text work.
 let canvasText = !params.has("domtext");
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const darkQuery = matchMedia("(prefers-color-scheme: dark)");
 const isDark = () => (root.dataset.theme ? root.dataset.theme === "dark" : darkQuery.matches);
-
-const clock = new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", hour: "numeric", minute: "2-digit" });
-const day = new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", weekday: "short", hour: "numeric" });
-
-function currentTide() {
-	if (mode === "scrub") return { level: scrub, next: 0.8, rate: 0.6, label: `scrubbing · ${Math.round(scrub * 100)}% of range` };
-	// Time-lapse: one hour of tide per second, starting from now.
-	const when = mode === "lapse" ? new Date(Date.now() + (performance.now() - lapseStart) * 3600) : new Date();
-	const t = tideAt(when);
-	const trend = t.rate >= 0 ? "rising" : "falling";
-	const label =
-		mode === "lapse"
-			? `${day.format(when)} · ${t.height.toFixed(1)} ft · ${trend}`
-			: `${t.height.toFixed(1)} ft · ${trend} · ${t.next.type} ${t.next.height.toFixed(1)} ft at ${clock.format(t.next.time)}`;
-	return { level: t.level, next: t.nextLevel, rate: t.rate, label };
-}
 
 // ---- drawing
 function resize() {
@@ -685,6 +693,7 @@ canvas.addEventListener("webglcontextlost", () => {
 	cancelAnimationFrame(raf);
 	canvas.classList.remove("ready");
 	stage.classList.remove("on-canvas");
+	setInterval(showTide, 60_000);
 });
 
 // ---- controls, on the hero lab only
