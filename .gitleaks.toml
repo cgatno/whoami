@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+# Web Crypto algorithm names like 'MLKEM768-X25519' sit next to "Key"
+# identifiers (encapsulateKey) and have enough entropy to trip generic-api-key.
+[[allowlists]]
+description = "Web Crypto algorithm identifiers"
+targetRules = ["generic-api-key"]
+regexes = ['''^ML-?KEM-?\d+(-X25519)?$''']
